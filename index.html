@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ORCA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>ORCA Checklist</title>
+<style>
+  :root{
+    --bg:#0b0f14; --surface:#111720; --head:#0d1928; --border:#1e2d42; --border2:#2a3f5c;
+    --text:#cdd8e8; --dim:#6b7f96; --blue:#0077c8; --ual:#004b87; --gold:#c8a96e;
+    --done:#00d4a0; --done-bg:rgba(0,212,160,.09);
+    --wp:#f0a500; --wp-bg:rgba(240,165,0,.08);
+    --ui:-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --mono:"SF Mono",Menlo,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg)}
+  body{
+    color:var(--text);font-family:var(--ui);font-size:13px;
+    padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right))
+            max(16px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+    -webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none;
+  }
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+    border-bottom:2px solid var(--ual);padding-bottom:8px;margin-bottom:8px}
+  .ref{font:9px var(--mono);color:var(--dim);letter-spacing:.06em;margin-bottom:3px}
+  h1{font-size:22px;font-weight:800;color:#fff;letter-spacing:.06em;line-height:1}
+  h1 span{color:var(--blue)}
+  .sub{font-size:10px;font-weight:600;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
+  .hright{display:flex;align-items:center;gap:10px}
+  .badge{font-weight:800;font-size:13px;letter-spacing:.06em;color:#fff;background:var(--ual);padding:3px 10px;border-radius:3px}
+
+  .bar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--ual),var(--done));transition:width .3s}
+  .count{font:11px var(--mono);color:var(--dim);min-width:58px;text-align:right}
+  button{font-family:var(--ui);-webkit-tap-highlight-color:transparent;cursor:pointer}
+  .btn{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);
+    background:none;border:1px solid var(--border2);border-radius:4px;padding:8px 14px;min-height:36px}
+  .btn:active{color:#fff;border-color:var(--blue);background:rgba(0,119,200,.12)}
+
+  .layout{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:10px;min-width:0}
+  @media (max-width:900px) and (orientation:portrait){.layout{grid-template-columns:1fr}}
+  @media (max-width:640px){.layout{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+  .card.wp{border-color:var(--wp)}
+  .ch{background:var(--head);border-bottom:1px solid var(--border);padding:7px 10px;
+    display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .wp .ch{background:var(--wp-bg);border-bottom-color:rgba(240,165,0,.3)}
+  .ct{font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+  .wp .ct{color:var(--wp)}
+  .sh{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+    padding:5px 10px 4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.025)}
+  .wpbtn{font:700 10px var(--mono);letter-spacing:.05em;color:var(--wp);background:none;
+    border:1px solid rgba(240,165,0,.45);border-radius:4px;padding:7px 10px;min-height:32px}
+  .wpbtn:active{background:rgba(240,165,0,.18)}
+
+  .item{display:flex;align-items:center;gap:8px;padding:6px 10px;min-height:36px;cursor:pointer;
+    border-bottom:1px solid rgba(30,45,66,.6);-webkit-tap-highlight-color:transparent}
+  .item.l1{padding-left:26px}
+  .item:active{background:rgba(255,255,255,.05)}
+  .item.done{background:var(--done-bg)}
+  .wp .item.done{background:var(--wp-bg)}
+  .box{width:18px;height:18px;min-width:18px;border:1.5px solid var(--border2);border-radius:3px;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s}
+  .box svg{display:none}
+  .item.done .box{background:var(--done);border-color:var(--done)}
+  .wp .item.done .box{background:var(--wp);border-color:var(--wp)}
+  .item.done .box svg{display:block}
+  .txt{flex:1;line-height:1.3}
+  .act{font:10px var(--mono);color:var(--gold);text-align:right;white-space:nowrap;flex-shrink:0}
+  .wp .act{color:var(--wp)}
+  .item.done .txt,.item.done .act{color:var(--dim)}
+  .item.done .txt{text-decoration:line-through;text-decoration-color:rgba(0,212,160,.4)}
+  .wp .item.done .txt{text-decoration-color:rgba(240,165,0,.4)}
+  .note{font-size:10px;color:var(--wp);padding:6px 10px;background:rgba(240,165,0,.04);border-top:1px solid rgba(240,165,0,.2)}
+  footer{margin-top:12px;text-align:center;font:9px var(--mono);color:var(--dim);letter-spacing:.04em;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="ref">FM 2602 · 4.10.4 · ORCA OPERATIONS · 17 APR 26</div>
+    <h1>ORCA <span>GUIDE</span></h1>
+    <div class="sub">757 / 767 · Checklist</div>
+  </div>
+  <div class="hright"><div class="badge">757-767</div></div>
+</header>
+
+<div class="bar">
+  <div class="track"><div class="fill" id="fill"></div></div>
+  <div class="count" id="count">0 / 0</div>
+  <button class="btn" id="resetAll">Reset All</button>
+</div>
+
+<div class="layout" id="layout"></div>
+
+<footer>
+  Reference aid only. Verify against the current Flight Manual (FM 2602, 17 APR 26).<br>
+  Progress saves on this device. <span id="status"></span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ───────── DATA ─────────
+  // To edit: change text here. Keep item ORDER stable within a section or saved checks will shift.
+  // [text, action, indent]  indent: 1 = sub-item
+  var COLS = [
+    [
+      {id:"ppd", title:"Preflight Planning & Dispatch", items:[
+        ["Briefing package","Review"],
+        ["Dispatch Release","Review",1],
+        ["Master Flight Log/Plan","Designate",1],
+        ["ATC filing","Review",1],
+        ["Track message","Review",1],
+        ["ETOPS critical fuel analysis","Review",1],
+        ["Weather and NOTAMs","Check",1],
+        ["Orientation Chart","Complete"],
+        ["Dispatch briefing","As required"]
+      ]},
+      {id:"pp", title:"Preflight Procedures", items:[
+        ["Aircraft maintenance status","Review"],
+        ["FMC route","Uplink/load"],
+        ["Independent route verification","Complete"],
+        ["Route distance","Confirm",1],
+        ["Crew verification of Class II","Complete"],
+        ["7-character L/L waypoints","Expand",1],
+        ["Class II waypoints","Circle",1],
+        ["Oceanic clearance","Confirm, slash",1],
+        ["Route copy","Consider"],
+        ["HF reception check","Complete"],
+        ["Documents","Check"],
+        ["Lav/water service","Verify"]
+      ]}
+    ],
+    [
+      {id:"enr", title:"Enroute Prior To / Entry Into ORCA", items:[
+        ["CPDLC","Log on"],
+        ["ETOPS alternate weather","Check OK"],
+        ["Wind update","Complete"],
+        ["Desired Mach and altitude","Determine"],
+        ["Oceanic clearance","As required"],
+        ["Oceanic clearance verify","Complete"],
+        ["Assigned Mach","Maintain"],
+        ["LNAV/VNAV","Confirm"],
+        ["Altitude and RVSM","Check"],
+        ["Nav accuracy","Verify"],
+        ["RNP","Verify/set 4.0"],
+        ["Master Flight Log/Plan","Check"],
+        ["HF/SELCAL","Complete"],
+        ["VNAV page","Review/set STEP"],
+        ["RTE 2","Program as desired"],
+        ["FIX page","Program as desired"],
+        ["ALTN page","Program as desired"]
+      ]},
+      {id:"est", title:"Established in ORCA", items:[
+        ["VHF radios","Set"],
+        ["SLOP","Apply"],
+        ["Transponder","Set"],
+        ["FIR boundary POS REPORT","As required"]
+      ]},
+      {id:"exit", title:"Exiting ORCA", items:[
+        ["SLOP and manual RNP","Remove"],
+        ["Routing","Confirm"],
+        ["Mach","Request or maintain"],
+        ["Desired altitude","Request"]
+      ]}
+    ],
+    [
+      {id:"wp", wp:true, title:"Waypoint Procedures", groups:[
+        {sub:"Approaching Waypoint (~30 NM)", id:"wa", items:[
+          ["Assigned Mach","Confirm"],
+          ["LNAV/VNAV","Confirm"],
+          ["Altitude and RVSM","Check"],
+          ["Next waypoint (course, distance)","Verify"]
+        ]},
+        {sub:"At Waypoint", id:"wb", items:[
+          ["Aircraft turns to correct outbound course","Confirm"],
+          ["FMC POS REPORT","Monitor/downlink"],
+          ["2nd slash on waypoint passed","Annotate"],
+          ["ATA/FUEL/ETA","Annotate"],
+          ["ATC POS report","Transmit, as req."]
+        ]},
+        {sub:"After Waypoint Passage (10 min)", id:"wc", items:[
+          ["Nav accuracy","Verify"],
+          ["ETA for next waypoint","Compare"]
+        ]}
+      ]},
+      {id:"add", title:"Additional Considerations", items:[
+        ["ETOPS MX verification flight","If applicable"],
+        ["Ground delay/return to gate","If applicable"],
+        ["Revised Clearance Guide","If applicable"],
+        ["Fuel freeze analysis","If applicable"],
+        ["TCDP for route","If applicable"]
+      ]}
+    ]
+  ];
+
+  // ───────── STATE (localStorage, fails safe) ─────────
+  var KEY = "orca-checklist-v1";
+  var state = {};
+  var wpCount = 0;
+  try{
+    var raw = JSON.parse(localStorage.getItem(KEY) || "{}");
+    state = raw.s || {}; wpCount = raw.w || 0;
+  }catch(e){}
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify({s:state, w:wpCount})); }catch(e){}
+  }
+
+  // ───────── RENDER ─────────
+  var CHECK = '<svg width="11" height="9" viewBox="0 0 9 7" fill="none"><polyline points="1,3.5 3.5,6 8,1" stroke="#0b0f14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var layout = document.getElementById("layout");
+  var wpCountEl;
+
+  function itemEl(secId, i, it){
+    var id = secId + "." + i;
+    var d = document.createElement("div");
+    d.className = "item" + (it[2] ? " l1" : "") + (state[id] ? " done" : "");
+    d.dataset.id = id;
+    d.innerHTML = '<div class="box">'+CHECK+'</div><span class="txt"></span><span class="act"></span>';
+    d.querySelector(".txt").textContent = it[0];
+    d.querySelector(".act").textContent = it[1];
+    return d;
+  }
+
+  COLS.forEach(function(col){
+    var c = document.createElement("div"); c.className = "col";
+    col.forEach(function(sec){
+      var card = document.createElement("section");
+      card.className = "card" + (sec.wp ? " wp" : "");
+      card.id = "card-" + sec.id;
+      var h = document.createElement("div"); h.className = "ch";
+      h.innerHTML = '<span class="ct"></span>';
+      h.querySelector(".ct").textContent = sec.title;
+      if(sec.wp){
+        var b = document.createElement("button");
+        b.className = "wpbtn"; b.id = "wpReset";
+        b.innerHTML = 'NEXT WPT <span id="wpn"></span> \u21BA';
+        h.appendChild(b);
+      }
+      card.appendChild(h);
+      if(sec.groups){
+        sec.groups.forEach(function(g){
+          var s = document.createElement("div"); s.className = "sh"; s.textContent = g.sub; card.appendChild(s);
+          g.items.forEach(function(it,i){ card.appendChild(itemEl(g.id,i,it)); });
+        });
+        var n = document.createElement("div"); n.className = "note";
+        n.textContent = "Repeat at each waypoint. Tap NEXT WPT to clear this card.";
+        card.appendChild(n);
+      }else{
+        sec.items.forEach(function(it,i){ card.appendChild(itemEl(sec.id,i,it)); });
+      }
+      c.appendChild(card);
+    });
+    layout.appendChild(c);
+  });
+
+  wpCountEl = document.getElementById("wpn");
+
+  // ───────── BEHAVIOR ─────────
+  function progress(){
+    var all = layout.querySelectorAll(".item").length;
+    var done = layout.querySelectorAll(".item.done").length;
+    document.getElementById("fill").style.width = (all ? done/all*100 : 0) + "%";
+    document.getElementById("count").textContent = done + " / " + all;
+    wpCountEl.textContent = "#" + (wpCount + 1);
+  }
+
+  layout.addEventListener("click", function(e){
+    var el = e.target.closest(".item");
+    if(!el) return;
+    var id = el.dataset.id;
+    if(state[id]){ delete state[id]; el.classList.remove("done"); }
+    else { state[id] = 1; el.classList.add("done"); }
+    save(); progress();
+  });
+
+  function clear(scope){
+    scope.querySelectorAll(".item.done").forEach(function(el){
+      el.classList.remove("done"); delete state[el.dataset.id];
+    });
+  }
+
+  document.getElementById("wpReset").addEventListener("click", function(){
+    clear(document.getElementById("card-wp"));
+    wpCount++; save(); progress();
+  });
+
+  document.getElementById("resetAll").addEventListener("click", function(){
+    if(!window.confirm("Clear ALL checks for a new flight?")) return;
+    clear(layout); wpCount = 0; save(); progress();
+  });
+
+  progress();
+
+  // ───────── SERVICE WORKER ─────────
+  var status = document.getElementById("status");
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").then(function(){
+      return navigator.serviceWorker.ready;
+    }).then(function(){
+      status.textContent = "Offline ready.";
+    }).catch(function(){
+      status.textContent = "Offline cache unavailable.";
+    });
+  }else{
+    status.textContent = "Offline cache unavailable.";
+  }
+})();
+</script>
+</body>
+</html>
