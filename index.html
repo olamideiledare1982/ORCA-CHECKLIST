@@ -35,8 +35,13 @@
   h1{font-size:22px;font-weight:800;color:#fff;letter-spacing:.06em;line-height:1}
   h1 span{color:var(--blue)}
   .sub{font-size:10px;font-weight:600;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
-  .hright{display:flex;align-items:center;gap:10px}
   .badge{font-weight:800;font-size:13px;letter-spacing:.06em;color:#fff;background:var(--ual);padding:3px 10px;border-radius:3px}
+
+  .tabs{display:flex;gap:8px;margin-bottom:8px}
+  .tab{flex:1;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--dim);background:var(--surface);
+    border:1px solid var(--border2);border-radius:6px;padding:10px 8px;min-height:40px}
+  .tab small{display:block;font:9px var(--mono);letter-spacing:.04em;font-weight:400;margin-top:2px}
+  .tab[aria-selected="true"]{color:#fff;background:var(--head);border-color:var(--blue);box-shadow:inset 0 -3px 0 var(--blue)}
 
   .bar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
   .track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
@@ -48,6 +53,7 @@
   .btn:active{color:#fff;border-color:var(--blue);background:rgba(0,119,200,.12)}
 
   .layout{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:start}
+  .layout[hidden]{display:none}
   .col{display:flex;flex-direction:column;gap:10px;min-width:0}
   @media (max-width:900px) and (orientation:portrait){.layout{grid-template-columns:1fr}}
   @media (max-width:640px){.layout{grid-template-columns:1fr}}
@@ -61,13 +67,18 @@
   .wp .ct{color:var(--wp)}
   .sh{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
     padding:5px 10px 4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.025)}
+  .lead{font-size:12px;font-style:italic;color:var(--text);padding:8px 10px;border-bottom:1px solid var(--border)}
   .wpbtn{font:700 10px var(--mono);letter-spacing:.05em;color:var(--wp);background:none;
     border:1px solid rgba(240,165,0,.45);border-radius:4px;padding:7px 10px;min-height:32px}
   .wpbtn:active{background:rgba(240,165,0,.18)}
+  .rbtn{font:700 10px var(--mono);letter-spacing:.05em;color:var(--dim);background:none;
+    border:1px solid var(--border2);border-radius:4px;padding:7px 10px;min-height:32px}
+  .rbtn:active{color:#fff;border-color:var(--blue);background:rgba(0,119,200,.15)}
 
   .item{display:flex;align-items:center;gap:8px;padding:6px 10px;min-height:36px;cursor:pointer;
     border-bottom:1px solid rgba(30,45,66,.6);-webkit-tap-highlight-color:transparent}
   .item.l1{padding-left:26px}
+  .item.l2{padding-left:42px}
   .item:active{background:rgba(255,255,255,.05)}
   .item.done{background:var(--done-bg)}
   .wp .item.done{background:var(--wp-bg)}
@@ -79,11 +90,21 @@
   .item.done .box svg{display:block}
   .txt{flex:1;line-height:1.3}
   .act{font:10px var(--mono);color:var(--gold);text-align:right;white-space:nowrap;flex-shrink:0}
+  .act:empty{display:none}
   .wp .act{color:var(--wp)}
   .item.done .txt,.item.done .act{color:var(--dim)}
   .item.done .txt{text-decoration:line-through;text-decoration-color:rgba(0,212,160,.4)}
   .wp .item.done .txt{text-decoration-color:rgba(240,165,0,.4)}
   .note{font-size:10px;color:var(--wp);padding:6px 10px;background:rgba(240,165,0,.04);border-top:1px solid rgba(240,165,0,.2)}
+  .note.plain{color:var(--text);font-size:11px;font-style:italic;background:rgba(255,255,255,.03);border-top:1px solid var(--border)}
+  .note.plain b{font-style:normal}
+
+  table.dev{width:100%;border-collapse:collapse;font-size:12px;margin:0}
+  table.dev th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:var(--head);
+    padding:6px 8px;border:1px solid var(--border);text-align:center}
+  table.dev td{padding:7px 8px;border:1px solid var(--border);text-align:center;color:var(--text)}
+  table.dev td.trk{color:var(--gold);font-family:var(--mono);font-size:11px}
+  .src{font:9px var(--mono);color:var(--dim);text-align:right;padding:6px 10px;border-top:1px solid var(--border)}
   footer{margin-top:12px;text-align:center;font:9px var(--mono);color:var(--dim);letter-spacing:.04em;line-height:1.6}
 </style>
 </head>
@@ -91,12 +112,17 @@
 
 <header>
   <div>
-    <div class="ref">FM 2602 · 4.10.4 · ORCA OPERATIONS · 17 APR 26</div>
+    <div class="ref" id="ref">FM 2602 · 4.10.4 · ORCA OPERATIONS · 17 APR 26</div>
     <h1>ORCA <span>GUIDE</span></h1>
     <div class="sub">757 / 767 · Checklist</div>
   </div>
-  <div class="hright"><div class="badge">757-767</div></div>
+  <div class="badge">757-767</div>
 </header>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" id="tab0" aria-selected="true">PAGE 1<small>4.10.4 · Checklist</small></button>
+  <button class="tab" role="tab" id="tab1" aria-selected="false">PAGE 2<small>4.10.5 · General</small></button>
+</div>
 
 <div class="bar">
   <div class="track"><div class="fill" id="fill"></div></div>
@@ -104,7 +130,8 @@
   <button class="btn" id="resetAll">Reset All</button>
 </div>
 
-<div class="layout" id="layout"></div>
+<div class="layout" id="p0"></div>
+<div class="layout" id="p1" hidden></div>
 
 <footer>
   Reference aid only. Verify against the current Flight Manual (FM 2602, 17 APR 26).<br>
@@ -117,183 +144,328 @@
 
   // ───────── DATA ─────────
   // To edit: change text here. Keep item ORDER stable within a section or saved checks will shift.
-  // [text, action, indent]  indent: 1 = sub-item
-  var COLS = [
-    [
-      {id:"ppd", title:"Preflight Planning & Dispatch", items:[
-        ["Briefing package","Review"],
-        ["Dispatch Release","Review",1],
-        ["Master Flight Log/Plan","Designate",1],
-        ["ATC filing","Review",1],
-        ["Track message","Review",1],
-        ["ETOPS critical fuel analysis","Review",1],
-        ["Weather and NOTAMs","Check",1],
-        ["Orientation Chart","Complete"],
-        ["Dispatch briefing","As required"]
-      ]},
-      {id:"pp", title:"Preflight Procedures", items:[
-        ["Aircraft maintenance status","Review"],
-        ["FMC route","Uplink/load"],
-        ["Independent route verification","Complete"],
-        ["Route distance","Confirm",1],
-        ["Crew verification of Class II","Complete"],
-        ["7-character L/L waypoints","Expand",1],
-        ["Class II waypoints","Circle",1],
-        ["Oceanic clearance","Confirm, slash",1],
-        ["Route copy","Consider"],
-        ["HF reception check","Complete"],
-        ["Documents","Check"],
-        ["Lav/water service","Verify"]
-      ]}
-    ],
-    [
-      {id:"enr", title:"Enroute Prior To / Entry Into ORCA", items:[
-        ["CPDLC","Log on"],
-        ["ETOPS alternate weather","Check OK"],
-        ["Wind update","Complete"],
-        ["Desired Mach and altitude","Determine"],
-        ["Oceanic clearance","As required"],
-        ["Oceanic clearance verify","Complete"],
-        ["Assigned Mach","Maintain"],
-        ["LNAV/VNAV","Confirm"],
-        ["Altitude and RVSM","Check"],
-        ["Nav accuracy","Verify"],
-        ["RNP","Verify/set 4.0"],
-        ["Master Flight Log/Plan","Check"],
-        ["HF/SELCAL","Complete"],
-        ["VNAV page","Review/set STEP"],
-        ["RTE 2","Program as desired"],
-        ["FIX page","Program as desired"],
-        ["ALTN page","Program as desired"]
-      ]},
-      {id:"est", title:"Established in ORCA", items:[
-        ["VHF radios","Set"],
-        ["SLOP","Apply"],
-        ["Transponder","Set"],
-        ["FIR boundary POS REPORT","As required"]
-      ]},
-      {id:"exit", title:"Exiting ORCA", items:[
-        ["SLOP and manual RNP","Remove"],
-        ["Routing","Confirm"],
-        ["Mach","Request or maintain"],
-        ["Desired altitude","Request"]
-      ]}
-    ],
-    [
-      {id:"wp", wp:true, title:"Waypoint Procedures", groups:[
-        {sub:"Approaching Waypoint (~30 NM)", id:"wa", items:[
-          ["Assigned Mach","Confirm"],
+  // Item: [text, action, indent]   indent: 1 = sub-item, 2 = sub-sub-item
+  // Section: id, title, items | groups:[{id,sub,items}], optional lead, note, table, reset, wp
+  var PAGES = [
+    { ref:"FM 2602 · 4.10.4 · ORCA OPERATIONS · 17 APR 26", cols:[
+      [
+        {id:"ppd", title:"Preflight Planning & Dispatch", items:[
+          ["Briefing package","Review"],
+          ["Dispatch Release","Review",1],
+          ["Master Flight Log/Plan","Designate",1],
+          ["ATC filing","Review",1],
+          ["Track message","Review",1],
+          ["ETOPS critical fuel analysis","Review",1],
+          ["Weather and NOTAMs","Check",1],
+          ["Orientation Chart","Complete"],
+          ["Dispatch briefing","As required"]
+        ]},
+        {id:"pp", title:"Preflight Procedures", items:[
+          ["Aircraft maintenance status","Review"],
+          ["FMC route","Uplink/load"],
+          ["Independent route verification","Complete"],
+          ["Route distance","Confirm",1],
+          ["Crew verification of Class II","Complete"],
+          ["7-character L/L waypoints","Expand",1],
+          ["Class II waypoints","Circle",1],
+          ["Oceanic clearance","Confirm, slash",1],
+          ["Route copy","Consider"],
+          ["HF reception check","Complete"],
+          ["Documents","Check"],
+          ["Lav/water service","Verify"]
+        ]}
+      ],
+      [
+        {id:"enr", title:"Enroute Prior To / Entry Into ORCA", items:[
+          ["CPDLC","Log on"],
+          ["ETOPS alternate weather","Check OK"],
+          ["Wind update","Complete"],
+          ["Desired Mach and altitude","Determine"],
+          ["Oceanic clearance","As required"],
+          ["Oceanic clearance verify","Complete"],
+          ["Assigned Mach","Maintain"],
           ["LNAV/VNAV","Confirm"],
           ["Altitude and RVSM","Check"],
-          ["Next waypoint (course, distance)","Verify"]
-        ]},
-        {sub:"At Waypoint", id:"wb", items:[
-          ["Aircraft turns to correct outbound course","Confirm"],
-          ["FMC POS REPORT","Monitor/downlink"],
-          ["2nd slash on waypoint passed","Annotate"],
-          ["ATA/FUEL/ETA","Annotate"],
-          ["ATC POS report","Transmit, as req."]
-        ]},
-        {sub:"After Waypoint Passage (10 min)", id:"wc", items:[
           ["Nav accuracy","Verify"],
-          ["ETA for next waypoint","Compare"]
+          ["RNP","Verify/set 4.0"],
+          ["Master Flight Log/Plan","Check"],
+          ["HF/SELCAL","Complete"],
+          ["VNAV page","Review/set STEP"],
+          ["RTE 2","Program as desired"],
+          ["FIX page","Program as desired"],
+          ["ALTN page","Program as desired"]
+        ]},
+        {id:"est", title:"Established in ORCA", items:[
+          ["VHF radios","Set"],
+          ["SLOP","Apply"],
+          ["Transponder","Set"],
+          ["FIR boundary POS REPORT","As required"]
+        ]},
+        {id:"exit", title:"Exiting ORCA", items:[
+          ["SLOP and manual RNP","Remove"],
+          ["Routing","Confirm"],
+          ["Mach","Request or maintain"],
+          ["Desired altitude","Request"]
         ]}
-      ]},
-      {id:"add", title:"Additional Considerations", items:[
-        ["ETOPS MX verification flight","If applicable"],
-        ["Ground delay/return to gate","If applicable"],
-        ["Revised Clearance Guide","If applicable"],
-        ["Fuel freeze analysis","If applicable"],
-        ["TCDP for route","If applicable"]
-      ]}
-    ]
+      ],
+      [
+        {id:"wp", wp:true, title:"Waypoint Procedures", groups:[
+          {sub:"Approaching Waypoint (~30 NM)", id:"wa", items:[
+            ["Assigned Mach","Confirm"],
+            ["LNAV/VNAV","Confirm"],
+            ["Altitude and RVSM","Check"],
+            ["Next waypoint (course, distance)","Verify"]
+          ]},
+          {sub:"At Waypoint", id:"wb", items:[
+            ["Aircraft turns to correct outbound course","Confirm"],
+            ["FMC POS REPORT","Monitor/downlink"],
+            ["2nd slash on waypoint passed","Annotate"],
+            ["ATA/FUEL/ETA","Annotate"],
+            ["ATC POS report","Transmit, as req."]
+          ]},
+          {sub:"After Waypoint Passage (10 min)", id:"wc", items:[
+            ["Nav accuracy","Verify"],
+            ["ETA for next waypoint","Compare"]
+          ]}
+        ], note:"Repeat at each waypoint. Tap NEXT WPT to clear this card."},
+        {id:"add", title:"Additional Considerations", items:[
+          ["ETOPS MX verification flight","If applicable"],
+          ["Ground delay/return to gate","If applicable"],
+          ["Revised Clearance Guide","If applicable"],
+          ["Fuel freeze analysis","If applicable"],
+          ["TCDP for route","If applicable"]
+        ]}
+      ]
+    ]},
+
+    { ref:"FM 2602 · 4.10.5 · ORCA OPERATIONS GENERAL · 17 APR 26", cols:[
+      [
+        {id:"rcg", title:"Revised Clearance Guide", reset:true,
+         lead:"A new Class II/oceanic clearance has been issued.",
+         items:[
+          ["Print new oceanic clearance. If received via voice, record on MFP or MFL."],
+          ["Compare new clearance with filed/expected clearance (or optional track) and track message, as appropriate. Note changes in assigned route or organized track, waypoints, altitudes, and speeds as applicable."],
+          ["Load new route into FMC. Independently verify entries are correct."],
+          ["Accomplish waypoint verification procedures."],
+          ["Obtain revised domestic clearance, as required, to new oceanic entry point."],
+          ["Comply with revised altitudes and/or speeds as appropriate prior to entry point."],
+          ["Advise Dispatch of new route and request updated Flight Plan."],
+          ["Program critical points and ETOPS alternates in FMC as required."],
+          ["Update winds."],
+          ["Plot new route on Orientation Chart, labeling CPs, ETOPS alternates, and other information as required. Strike through old route."]
+         ],
+         plain:"<b>Note:</b> Prior to oceanic exit point, obtain and program revised domestic clearance as applicable."}
+      ],
+      [
+        {id:"cbg", title:"ORCA Contingency Briefing Guide", reset:true, groups:[
+          {sub:"Emergency Descent (e.g., Rapid Depressurization)", id:"cb1", items:[
+            ["CABIN ALTITUDE QRC – Review"],
+            ["TCDP routes and grid MORA – Review"],
+            ["Offset – Determine dir/dist (L/R 5), LNAV"]
+          ]},
+          {sub:"Driftdown (e.g., Engine Failure)", id:"cb2", items:[
+            ["Threats"],
+            ["Traffic (e.g., Atlantic tracks)","",2],
+            ["Terrain","",2],
+            ["Volcanic ash/weather","",2],
+            ["Distant alternate (fuel considerations)","",2],
+            ["Offset – Determine dir/dist (L/R 5), LNAV"],
+            ["FMC EO SPD _____ and ALT _____ – Review diff from cruise speed and altitude"],
+            ["ENG QRC (Severe Damage, Surge/Stall) – Review"],
+            ["DRIFTDOWN QRC – Review Card"],
+            ["END Driftdown – Transition to IDLE descent (e.g., offset 5 NM + clear of threat)"]
+          ]},
+          {sub:"Emergency can maintain altitude (e.g., Cargo Fire)", id:"cb3", items:[
+            ["Offset – Determine dir/dist (L/R 5), LNAV"],
+            ["Altitude – Review change +/- 500 feet once offset 5 NM (1000 feet if above FL 410)"],
+            ["Speed – As required"]
+          ]},
+          {sub:"Contingency Comm Plan", id:"cb4", items:[
+            ["Clearance – Obtain if able (VHF, SATCOM, HF)"],
+            ["Intentions – Broadcast on 121.5 and 123.45"],
+            ["CPDLC emergency report – SEND"],
+            ["Exterior lights – ON"],
+            ["Squawk – 7700"]
+          ]}
+        ]},
+        {id:"rdp", title:"Redispatch Procedures", reset:true, groups:[
+          {sub:"Within two hours of redispatch point", id:"rd1", items:[
+            ["[PM] Redispatch procedures – Initiate"],
+            ["[PM] Fuel remaining at redispatch point – Project and relay to NOC"]
+          ]},
+          {sub:"If redispatch acceptable", id:"rd2", items:[
+            ["[C, F] ACARS redispatch message – RDA"]
+          ]},
+          {sub:"If redispatch not acceptable", id:"rd3", items:[
+            ["[C, F] ACARS redispatch message – RDU"]
+          ]},
+          {sub:"If diverting to refueling airport", id:"rd4", items:[
+            ["[C, F] New ATC clearance – Coordinate"]
+          ]}
+        ]}
+      ],
+      [
+        {id:"pcb", title:"Pilot Change Brief", reset:true, items:[
+          ["Position/flight level/SLOP"],
+          ["Clearance/impending CLNC/route changes"],
+          ["CPDLC/ADS-C status"],
+          ["Radio frequencies/ATC controller"],
+          ["Enroute weather/turbulence"],
+          ["Diversion/landing airport status"],
+          ["Redispatch WX and status"],
+          ["Aircraft, cabin, and pax status"],
+          ["Mach/cost index (CI)"],
+          ["Routing and STEP/RECMD altitudes"],
+          ["Fuel score/CP/redispatch fuel"],
+          ["In Captain's absence, designate acting Captain"],
+          ["Contingencies – Consider briefing applicable contingencies in center column"]
+        ]},
+        {id:"wxd", title:"Weather Deviation", reset:true, groups:[
+          {sub:"If unable to obtain clearance", id:"wd1", items:[
+            ["Deviation < 5 NM – Maintain cleared FL"],
+            ["Deviation ≥ 5 NM – Climb/descend 300 feet"],
+            ["Exterior lights – ON"],
+            ["Intentions – Broadcast on 121.5 and 123.45"]
+          ]}
+        ], table:{
+          head:["Track","Direction","Level Change"],
+          rows:[
+            ["000-179 Magnetic", [["Left","Descend 300 feet"],["Right","Climb 300 feet"]]],
+            ["180-359 Magnetic", [["Left","Climb 300 feet"],["Right","Descend 300 feet"]]]
+          ]
+        }, src:"756-4-053b"}
+      ]
+    ]}
   ];
 
   // ───────── STATE (localStorage, fails safe) ─────────
   var KEY = "orca-checklist-v1";
-  var state = {};
-  var wpCount = 0;
+  var state = {}, wpCount = 0, tab = 0;
   try{
     var raw = JSON.parse(localStorage.getItem(KEY) || "{}");
-    state = raw.s || {}; wpCount = raw.w || 0;
+    state = raw.s || {}; wpCount = raw.w || 0; tab = raw.t || 0;
   }catch(e){}
+  if(tab !== 0 && tab !== 1) tab = 0;
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({s:state, w:wpCount})); }catch(e){}
+    try{ localStorage.setItem(KEY, JSON.stringify({s:state, w:wpCount, t:tab})); }catch(e){}
   }
 
   // ───────── RENDER ─────────
   var CHECK = '<svg width="11" height="9" viewBox="0 0 9 7" fill="none"><polyline points="1,3.5 3.5,6 8,1" stroke="#0b0f14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  var layout = document.getElementById("layout");
-  var wpCountEl;
+
+  function el(tag, cls, text){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    if(text != null) e.textContent = text;
+    return e;
+  }
 
   function itemEl(secId, i, it){
     var id = secId + "." + i;
-    var d = document.createElement("div");
-    d.className = "item" + (it[2] ? " l1" : "") + (state[id] ? " done" : "");
+    var d = el("div", "item" + (it[2] === 1 ? " l1" : it[2] === 2 ? " l2" : "") + (state[id] ? " done" : ""));
     d.dataset.id = id;
     d.innerHTML = '<div class="box">'+CHECK+'</div><span class="txt"></span><span class="act"></span>';
     d.querySelector(".txt").textContent = it[0];
-    d.querySelector(".act").textContent = it[1];
+    d.querySelector(".act").textContent = it[1] || "";
     return d;
   }
 
-  COLS.forEach(function(col){
-    var c = document.createElement("div"); c.className = "col";
-    col.forEach(function(sec){
-      var card = document.createElement("section");
-      card.className = "card" + (sec.wp ? " wp" : "");
-      card.id = "card-" + sec.id;
-      var h = document.createElement("div"); h.className = "ch";
-      h.innerHTML = '<span class="ct"></span>';
-      h.querySelector(".ct").textContent = sec.title;
-      if(sec.wp){
-        var b = document.createElement("button");
-        b.className = "wpbtn"; b.id = "wpReset";
-        b.innerHTML = 'NEXT WPT <span id="wpn"></span> \u21BA';
-        h.appendChild(b);
-      }
-      card.appendChild(h);
-      if(sec.groups){
-        sec.groups.forEach(function(g){
-          var s = document.createElement("div"); s.className = "sh"; s.textContent = g.sub; card.appendChild(s);
-          g.items.forEach(function(it,i){ card.appendChild(itemEl(g.id,i,it)); });
-        });
-        var n = document.createElement("div"); n.className = "note";
-        n.textContent = "Repeat at each waypoint. Tap NEXT WPT to clear this card.";
-        card.appendChild(n);
-      }else{
-        sec.items.forEach(function(it,i){ card.appendChild(itemEl(sec.id,i,it)); });
-      }
-      c.appendChild(card);
+  function deviationTable(t){
+    var tb = el("table", "dev");
+    var h = "<tr>" + t.head.map(function(x){ return "<th>" + x + "</th>"; }).join("") + "</tr>";
+    var body = "";
+    t.rows.forEach(function(r){
+      r[1].forEach(function(line, k){
+        body += "<tr>" + (k === 0 ? '<td class="trk" rowspan="' + r[1].length + '">' + r[0] + "</td>" : "") +
+                "<td>" + line[0] + "</td><td>" + line[1] + "</td></tr>";
+      });
     });
-    layout.appendChild(c);
-  });
+    tb.innerHTML = h + body;
+    return tb;
+  }
 
+  var wpCountEl;
+  PAGES.forEach(function(pg, pi){
+    var layout = document.getElementById("p" + pi);
+    pg.cols.forEach(function(col){
+      var c = el("div", "col");
+      col.forEach(function(sec){
+        var card = el("section", "card" + (sec.wp ? " wp" : ""));
+        card.id = "card-" + sec.id;
+        var h = el("div", "ch");
+        h.appendChild(el("span", "ct", sec.title));
+        if(sec.wp){
+          var b = el("button", "wpbtn"); b.id = "wpReset";
+          b.innerHTML = 'NEXT WPT <span id="wpn"></span> ↺';
+          h.appendChild(b);
+        }else if(sec.reset){
+          var r = el("button", "rbtn", "RESET ↺");
+          r.dataset.reset = sec.id;
+          h.appendChild(r);
+        }
+        card.appendChild(h);
+        if(sec.lead) card.appendChild(el("div", "lead", sec.lead));
+        if(sec.groups){
+          sec.groups.forEach(function(g){
+            card.appendChild(el("div", "sh", g.sub));
+            g.items.forEach(function(it,i){ card.appendChild(itemEl(g.id,i,it)); });
+          });
+        }else{
+          sec.items.forEach(function(it,i){ card.appendChild(itemEl(sec.id,i,it)); });
+        }
+        if(sec.table) card.appendChild(deviationTable(sec.table));
+        if(sec.note) card.appendChild(el("div", "note", sec.note));
+        if(sec.plain){ var p = el("div", "note plain"); p.innerHTML = sec.plain; card.appendChild(p); }
+        if(sec.src) card.appendChild(el("div", "src", sec.src));
+        c.appendChild(card);
+      });
+      layout.appendChild(c);
+    });
+  });
   wpCountEl = document.getElementById("wpn");
 
   // ───────── BEHAVIOR ─────────
+  var pages = [document.getElementById("p0"), document.getElementById("p1")];
+  var tabs  = [document.getElementById("tab0"), document.getElementById("tab1")];
+
+  function showTab(n){
+    tab = n;
+    pages.forEach(function(p,i){ p.hidden = (i !== n); });
+    tabs.forEach(function(t,i){ t.setAttribute("aria-selected", i === n ? "true" : "false"); });
+    document.getElementById("ref").textContent = PAGES[n].ref;
+    progress();
+  }
+
   function progress(){
-    var all = layout.querySelectorAll(".item").length;
-    var done = layout.querySelectorAll(".item.done").length;
+    var cur = pages[tab];
+    var all = cur.querySelectorAll(".item").length;
+    var done = cur.querySelectorAll(".item.done").length;
     document.getElementById("fill").style.width = (all ? done/all*100 : 0) + "%";
     document.getElementById("count").textContent = done + " / " + all;
-    wpCountEl.textContent = "#" + (wpCount + 1);
+    if(wpCountEl) wpCountEl.textContent = "#" + (wpCount + 1);
   }
-
-  layout.addEventListener("click", function(e){
-    var el = e.target.closest(".item");
-    if(!el) return;
-    var id = el.dataset.id;
-    if(state[id]){ delete state[id]; el.classList.remove("done"); }
-    else { state[id] = 1; el.classList.add("done"); }
-    save(); progress();
-  });
 
   function clear(scope){
-    scope.querySelectorAll(".item.done").forEach(function(el){
-      el.classList.remove("done"); delete state[el.dataset.id];
+    scope.querySelectorAll(".item.done").forEach(function(e){
+      e.classList.remove("done"); delete state[e.dataset.id];
     });
   }
+
+  tabs.forEach(function(t,i){ t.addEventListener("click", function(){ showTab(i); save(); }); });
+
+  document.addEventListener("click", function(e){
+    var rb = e.target.closest("[data-reset]");
+    if(rb){
+      clear(document.getElementById("card-" + rb.dataset.reset));
+      save(); progress(); return;
+    }
+    var el_ = e.target.closest(".item");
+    if(!el_) return;
+    var id = el_.dataset.id;
+    if(state[id]){ delete state[id]; el_.classList.remove("done"); }
+    else { state[id] = 1; el_.classList.add("done"); }
+    save(); progress();
+  });
 
   document.getElementById("wpReset").addEventListener("click", function(){
     clear(document.getElementById("card-wp"));
@@ -301,11 +473,11 @@
   });
 
   document.getElementById("resetAll").addEventListener("click", function(){
-    if(!window.confirm("Clear ALL checks for a new flight?")) return;
-    clear(layout); wpCount = 0; save(); progress();
+    if(!window.confirm("Clear ALL checks on BOTH pages for a new flight?")) return;
+    pages.forEach(clear); wpCount = 0; save(); progress();
   });
 
-  progress();
+  showTab(tab);
 
   // ───────── SERVICE WORKER ─────────
   var status = document.getElementById("status");

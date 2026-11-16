@@ -2,9 +2,11 @@
 
 Offline checklist PWA for the 757/767 ORCA Guide (FM 2602, 4.10.4, 17 APR 26).
 
+- Two tabs: **Page 1** (4.10.4 checklist) and **Page 2** (4.10.5 General: Revised Clearance, Contingency Briefing, Redispatch, Pilot Change Brief, Weather Deviation)
 - Tap to check items; progress is saved on the device (survives Safari closing or an iPad restart)
 - **Reset All** (with confirm) for a new flight
 - **NEXT WPT** clears only the Waypoint Procedures card and counts waypoints
+- Each Page 2 card has its own **RESET** so it can be reused during a flight
 - Works with no signal once installed
 
 Reference aid only. Always verify against the current Flight Manual.
