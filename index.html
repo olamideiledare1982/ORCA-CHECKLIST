@@ -140,6 +140,12 @@
   .layout table.dev th,.layout table.dev td{padding:.25em .5em}
   footer{flex:none;margin:0;font-size:8px;line-height:1.2}
   @media (max-width:640px){.layout{overflow:auto}}
+  .pill{flex:none;font:700 10px var(--mono);letter-spacing:.08em;padding:7px 10px;border-radius:999px;
+    border:1px solid var(--border2);color:var(--dim);white-space:nowrap}
+  .pill::before{content:"\25CF";margin-right:6px}
+  .pill.wait{color:var(--wp);border-color:rgba(240,165,0,.5)}
+  .pill.ok{color:var(--done);border-color:rgba(0,212,160,.6);background:var(--done-bg)}
+  .pill.bad{color:#ff6b6b;border-color:rgba(255,107,107,.6)}
 </style>
 </head>
 <body>
@@ -158,12 +164,13 @@
     <div class="count" id="count">0 / 0</div>
     <button class="btn" id="resetAll">Reset All</button>
   </div>
+  <div class="pill wait" id="status" role="status">CHECKING…</div>
 </div>
 
 <div class="layout" id="p0"></div>
 <div class="layout" id="p1" hidden></div>
 
-<footer>Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device. <span id="status"></span></footer>
+<footer>Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
 
 <script>
 (function(){
@@ -523,12 +530,12 @@
     navigator.serviceWorker.register("sw.js").then(function(){
       return navigator.serviceWorker.ready;
     }).then(function(){
-      status.textContent = "Offline ready.";
+      status.textContent = "OFFLINE READY"; status.className = "pill ok";
     }).catch(function(){
-      status.textContent = "Offline cache unavailable.";
+      status.textContent = "NOT OFFLINE"; status.className = "pill bad";
     });
   }else{
-    status.textContent = "Offline cache unavailable.";
+    status.textContent = "NOT OFFLINE"; status.className = "pill bad";
   }
 })();
 </script>
