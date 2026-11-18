@@ -55,8 +55,7 @@
   .layout{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:start}
   .layout[hidden]{display:none}
   .col{display:flex;flex-direction:column;gap:10px;min-width:0}
-  @media (max-width:900px) and (orientation:portrait){.layout{grid-template-columns:1fr}}
-  @media (max-width:640px){.layout{grid-template-columns:1fr}}
+    @media (max-width:640px){.layout{grid-template-columns:1fr}}
 
   .card{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden}
   .card.wp{border-color:var(--wp)}
@@ -106,37 +105,65 @@
   table.dev td.trk{color:var(--gold);font-family:var(--mono);font-size:11px}
   .src{font:9px var(--mono);color:var(--dim);text-align:right;padding:6px 10px;border-top:1px solid var(--border)}
   footer{margin-top:12px;text-align:center;font:9px var(--mono);color:var(--dim);letter-spacing:.04em;line-height:1.6}
+
+  /* ===== FIT-TO-SCREEN (iPad Pro 11" landscape, no scroll) ===== */
+  html,body{height:100%;overflow:hidden}
+  body{display:flex;flex-direction:column;gap:6px;height:100vh;height:100dvh;
+    padding:max(6px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+  .top{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--ual);padding-bottom:5px;flex:none}
+  .brand{flex:none}
+  .ref{font:8px var(--mono);margin:0 0 1px}
+  h1{font-size:17px}
+  .tabs{display:flex;gap:6px;margin:0;flex:none}
+  .tab{flex:none;min-height:34px;padding:4px 14px;font-size:11px}
+  .tab small{display:inline;margin-left:6px;font-size:9px}
+  .bar{flex:1;margin:0;min-width:0}
+  .btn{padding:6px 10px;min-height:32px;font-size:10px}
+  .layout{flex:1;min-height:0;font-size:var(--fs,12px);gap:.6em;overflow:hidden}
+  .layout[hidden]{display:none}
+  .col{gap:.6em}
+  .layout .ch{padding:.35em .6em}
+  .layout .ct{font-size:.82em}
+  .layout .sh{font-size:.72em;padding:.25em .7em}
+  .layout .lead{font-size:1em;padding:.3em .7em}
+  .layout .item{padding:.18em .6em;min-height:0;gap:.55em}
+  .layout .item.l1{padding-left:1.8em}
+  .layout .item.l2{padding-left:3em}
+  .layout .box{width:1.35em;height:1.35em;min-width:1.35em}
+  .layout .txt{line-height:1.2}
+  .layout .act{font-size:.82em}
+  .layout .note{font-size:.82em;padding:.3em .7em}
+  .layout .note.plain{font-size:.9em}
+  .layout .src{font-size:.75em;padding:.2em .7em}
+  .layout .wpbtn,.layout .rbtn{font-size:.78em;padding:.4em .6em;min-height:28px}
+  .layout table.dev{font-size:.95em}
+  .layout table.dev th,.layout table.dev td{padding:.25em .5em}
+  footer{flex:none;margin:0;font-size:8px;line-height:1.2}
+  @media (max-width:640px){.layout{overflow:auto}}
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <div class="ref" id="ref">FM 2602 · 4.10.4 · ORCA OPERATIONS · 17 APR 26</div>
+<div class="top">
+  <div class="brand">
+    <div class="ref" id="ref">FM 2602</div>
     <h1>ORCA <span>GUIDE</span></h1>
-    <div class="sub">757 / 767 · Checklist</div>
   </div>
-  <div class="badge">757-767</div>
-</header>
-
-<div class="tabs" role="tablist">
-  <button class="tab" role="tab" id="tab0" aria-selected="true">PAGE 1<small>4.10.4 · Checklist</small></button>
-  <button class="tab" role="tab" id="tab1" aria-selected="false">PAGE 2<small>4.10.5 · General</small></button>
-</div>
-
-<div class="bar">
-  <div class="track"><div class="fill" id="fill"></div></div>
-  <div class="count" id="count">0 / 0</div>
-  <button class="btn" id="resetAll">Reset All</button>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab0" aria-selected="true">PAGE 1 <small>4.10.4 Checklist</small></button>
+    <button class="tab" role="tab" id="tab1" aria-selected="false">PAGE 2 <small>4.10.5 General</small></button>
+  </div>
+  <div class="bar">
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="count" id="count">0 / 0</div>
+    <button class="btn" id="resetAll">Reset All</button>
+  </div>
 </div>
 
 <div class="layout" id="p0"></div>
 <div class="layout" id="p1" hidden></div>
 
-<footer>
-  Reference aid only. Verify against the current Flight Manual (FM 2602, 17 APR 26).<br>
-  Progress saves on this device. <span id="status"></span>
-</footer>
+<footer>Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device. <span id="status"></span></footer>
 
 <script>
 (function(){
@@ -428,12 +455,21 @@
   var pages = [document.getElementById("p0"), document.getElementById("p1")];
   var tabs  = [document.getElementById("tab0"), document.getElementById("tab1")];
 
+  function fit(){
+    var L = pages[tab]; if(!L) return;
+    var fs = 15;
+    L.style.setProperty("--fs", fs + "px");
+    while(fs > 6.5 && L.scrollHeight > L.clientHeight + 1){
+      fs -= 0.25; L.style.setProperty("--fs", fs + "px");
+    }
+  }
+
   function showTab(n){
     tab = n;
     pages.forEach(function(p,i){ p.hidden = (i !== n); });
     tabs.forEach(function(t,i){ t.setAttribute("aria-selected", i === n ? "true" : "false"); });
     document.getElementById("ref").textContent = PAGES[n].ref;
-    progress();
+    progress(); fit();
   }
 
   function progress(){
@@ -478,6 +514,8 @@
   });
 
   showTab(tab);
+  window.addEventListener("resize", fit);
+  window.addEventListener("orientationchange", function(){ setTimeout(fit, 200); });
 
   // ───────── SERVICE WORKER ─────────
   var status = document.getElementById("status");
