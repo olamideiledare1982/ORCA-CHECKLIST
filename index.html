@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b0f14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -164,6 +164,22 @@
     .pill{margin-left:auto}
   }
   .layout[hidden]{display:none !important}
+  * {touch-action:manipulation}
+  /* paged mode (narrow windows): one section at a time + chip bar */
+  .chips{display:none;flex:none;gap:6px;overflow-x:auto}
+  body.paged .chips{display:flex}
+  .chips[hidden]{display:none !important}
+  .chip{flex:1 0 auto;min-height:44px;padding:4px 10px;border:1px solid var(--border2);border-radius:6px;
+    background:var(--surface);color:var(--dim);font:700 11px var(--ui);text-align:center;letter-spacing:.04em}
+  .chip small{display:block;font:9px var(--mono);margin-top:2px;letter-spacing:0}
+  .chip.full{color:var(--done);border-color:rgba(0,212,160,.5)}
+  .chip.isWp{border-color:rgba(240,165,0,.6);color:var(--wp)}
+  .chip.on{color:#fff;background:var(--head);border-color:var(--blue);box-shadow:inset 0 -3px 0 var(--blue)}
+  .layout.c1 .card:not(.on){display:none}
+  .layout:not(.c1) #card-cbg2 .ch{display:none}
+  .layout:not(.c1) #card-cbg{border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:-.6em}
+  .layout:not(.c1) #card-cbg2{border-top:0;border-top-left-radius:0;border-top-right-radius:0}
+  .layout.c1 .item{padding-top:.4em;padding-bottom:.4em;min-height:34px}
 </style>
 </head>
 <body>
@@ -326,7 +342,9 @@
             ["ENG QRC (Severe Damage, Surge/Stall) – Review"],
             ["DRIFTDOWN QRC – Review Card"],
             ["END Driftdown – Transition to IDLE descent (e.g., offset 5 NM + clear of threat)"]
-          ]},
+          ]}
+        ]},
+        {id:"cbg2", title:"ORCA Contingency Briefing Guide (cont.)", reset:true, groups:[
           {sub:"Emergency can maintain altitude (e.g., Cargo Fire)", id:"cb3", items:[
             ["Offset – Determine dir/dist (L/R 5), LNAV"],
             ["Altitude – Review change +/- 500 feet once offset 5 NM (1000 feet if above FL 410)"],
@@ -392,14 +410,14 @@
 
   // ───────── STATE (localStorage, fails safe) ─────────
   var KEY = "orca-checklist-v1";
-  var state = {}, wpCount = 0, tab = 0;
+  var state = {}, wpCount = 0, tab = 0, active = [0,0];
   try{
     var raw = JSON.parse(localStorage.getItem(KEY) || "{}");
-    state = raw.s || {}; wpCount = raw.w || 0; tab = raw.t || 0;
+    state = raw.s || {}; wpCount = raw.w || 0; tab = raw.t || 0; if(raw.c) active = raw.c;
   }catch(e){}
   if(tab !== 0 && tab !== 1) tab = 0;
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({s:state, w:wpCount, t:tab})); }catch(e){}
+    try{ localStorage.setItem(KEY, JSON.stringify({s:state, w:wpCount, t:tab, c:active})); }catch(e){}
   }
 
   // ───────── RENDER ─────────
@@ -476,6 +494,25 @@
   });
   wpCountEl = document.getElementById("wpn");
 
+  var SHORT = {ppd:"Planning",pp:"Preflight",enr:"Enroute",est:"Established",exit:"Exit",wp:"Waypoint",add:"Add\u2019l",
+               rcg:"Clearance",cbg:"Descent/Drift",cbg2:"Alt/Comm",rdp:"Redispatch",pcb:"Pilot Change",wxd:"Weather"};
+  var cards = [], chips = [];
+  PAGES.forEach(function(pg, pi){
+    var L = document.getElementById("p" + pi);
+    cards[pi] = Array.prototype.slice.call(L.querySelectorAll(".card"));
+    var bar = el("div", "chips"); bar.hidden = true;
+    cards[pi].forEach(function(c, k){
+      var id = c.id.replace("card-", "");
+      var b = el("button", "chip" + (id === "wp" ? " isWp" : ""));
+      b.dataset.k = k;
+      b.innerHTML = SHORT[id] + "<small></small>";
+      bar.appendChild(b);
+    });
+    L.parentNode.insertBefore(bar, L);
+    chips[pi] = bar;
+  });
+  for(var q = 0; q < 2; q++){ if(!(active[q] >= 0 && active[q] < cards[q].length)) active[q] = 0; }
+
   // ───────── BEHAVIOR ─────────
   var pages = [document.getElementById("p0"), document.getElementById("p1")];
   var tabs  = [document.getElementById("tab0"), document.getElementById("tab1")];
@@ -494,10 +531,30 @@
   function fit(){
     var L = pages[tab]; if(!L) return;
     var w = window.innerWidth;
+    document.body.classList.remove("paged");
     if(w >= 900 && tryFit(L,"c3",15,9.5)) return;
     if(w >= 460 && tryFit(L,"c2",15,9.5)) return;
     setMode(L,"c1");
-    L.style.setProperty("--fs", (w < 420 ? 13 : 14) + "px");
+    document.body.classList.add("paged");
+    var fs = 15; L.style.setProperty("--fs", fs + "px");
+    while(fs > 10 && L.scrollHeight > L.clientHeight + 1){ fs -= 0.25; L.style.setProperty("--fs", fs + "px"); }
+  }
+
+  function setActive(pi, k){
+    active[pi] = k;
+    cards[pi].forEach(function(c, i){ c.classList.toggle("on", i === k); });
+    Array.prototype.forEach.call(chips[pi].children, function(b, i){ b.classList.toggle("on", i === k); });
+  }
+
+  function updateChips(){
+    cards.forEach(function(list, pi){
+      list.forEach(function(c, k){
+        var n = c.querySelectorAll(".item").length, d = c.querySelectorAll(".item.done").length;
+        var b = chips[pi].children[k];
+        b.querySelector("small").textContent = d + "/" + n;
+        b.classList.toggle("full", n > 0 && d === n);
+      });
+    });
   }
 
   function showTab(n){
@@ -505,6 +562,8 @@
     pages.forEach(function(p,i){ p.hidden = (i !== n); });
     tabs.forEach(function(t,i){ t.setAttribute("aria-selected", i === n ? "true" : "false"); });
     document.getElementById("ref").textContent = PAGES[n].ref;
+    chips.forEach(function(c,i){ c.hidden = (i !== n); });
+    setActive(n, active[n]);
     progress(); fit();
   }
 
@@ -515,6 +574,7 @@
     document.getElementById("fill").style.width = (all ? done/all*100 : 0) + "%";
     document.getElementById("count").textContent = done + " / " + all;
     if(wpCountEl) wpCountEl.textContent = "#" + (wpCount + 1);
+    updateChips();
   }
 
   function clear(scope){
@@ -523,12 +583,21 @@
     });
   }
 
+  chips.forEach(function(bar, pi){
+    bar.addEventListener("click", function(e){
+      var b = e.target.closest(".chip"); if(!b) return;
+      setActive(pi, +b.dataset.k); fit(); save();
+    });
+  });
+  document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+
   tabs.forEach(function(t,i){ t.addEventListener("click", function(){ showTab(i); save(); }); });
 
   document.addEventListener("click", function(e){
     var rb = e.target.closest("[data-reset]");
     if(rb){
       clear(document.getElementById("card-" + rb.dataset.reset));
+      if(rb.dataset.reset === "cbg" && !document.body.classList.contains("paged")) clear(document.getElementById("card-cbg2"));
       save(); progress(); return;
     }
     var el_ = e.target.closest(".item");
