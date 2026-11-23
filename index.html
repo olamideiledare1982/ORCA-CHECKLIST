@@ -146,6 +146,24 @@
   .pill.wait{color:var(--wp);border-color:rgba(240,165,0,.5)}
   .pill.ok{color:var(--done);border-color:rgba(0,212,160,.6);background:var(--done-bg)}
   .pill.bad{color:#ff6b6b;border-color:rgba(255,107,107,.6)}
+
+  /* ===== STAGE MANAGER / ANY WINDOW SIZE ===== */
+  .layout.c3{display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden}
+  .layout.c2{display:block;columns:2;column-gap:.7em;column-fill:auto;overflow:hidden}
+  .layout.c2 .col{display:contents}
+  .layout.c2 .card{break-inside:avoid;margin-bottom:.7em}
+  .layout.c1{display:block;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  .layout.c1 .col{margin-bottom:.7em}
+  .layout.c1 .item,.layout.c2 .item{padding-top:.3em;padding-bottom:.3em}
+  .layout.c1 .item{padding-top:.5em;padding-bottom:.5em;min-height:40px}
+  @media (max-width:760px){
+    .top{flex-wrap:wrap;gap:6px 8px}
+    .ref,.tab small{display:none}
+    .tab{padding:4px 12px}
+    .bar{order:5;flex:1 1 100%}
+    .pill{margin-left:auto}
+  }
+  .layout[hidden]{display:none !important}
 </style>
 </head>
 <body>
@@ -462,13 +480,24 @@
   var pages = [document.getElementById("p0"), document.getElementById("p1")];
   var tabs  = [document.getElementById("tab0"), document.getElementById("tab1")];
 
+  // Pick the best layout for this window: 3 columns, else 2, else 1 (scrolls).
+  function setMode(L,m){ L.classList.remove("c1","c2","c3"); L.classList.add(m); }
+  function over(L,m){
+    return m === "c2" ? L.scrollWidth > L.clientWidth + 1 : L.scrollHeight > L.clientHeight + 1;
+  }
+  function tryFit(L,m,max,min){
+    setMode(L,m);
+    var fs = max; L.style.setProperty("--fs", fs + "px");
+    while(fs > min && over(L,m)){ fs -= 0.25; L.style.setProperty("--fs", fs + "px"); }
+    return !over(L,m);
+  }
   function fit(){
     var L = pages[tab]; if(!L) return;
-    var fs = 15;
-    L.style.setProperty("--fs", fs + "px");
-    while(fs > 6.5 && L.scrollHeight > L.clientHeight + 1){
-      fs -= 0.25; L.style.setProperty("--fs", fs + "px");
-    }
+    var w = window.innerWidth;
+    if(w >= 900 && tryFit(L,"c3",15,9.5)) return;
+    if(w >= 460 && tryFit(L,"c2",15,9.5)) return;
+    setMode(L,"c1");
+    L.style.setProperty("--fs", (w < 420 ? 13 : 14) + "px");
   }
 
   function showTab(n){
