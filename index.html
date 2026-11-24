@@ -117,7 +117,7 @@
   .tabs{display:flex;gap:6px;margin:0;flex:none}
   .tab{flex:none;min-height:34px;padding:4px 14px;font-size:11px}
   .tab small{display:inline;margin-left:6px;font-size:9px}
-  .bar{flex:1 1 200px;margin:0;min-width:0}
+  .bar{flex:1 1 90px;margin:0;min-width:0}
   .btn{padding:6px 10px;min-height:32px;font-size:10px}
   .layout{flex:1;min-height:0;font-size:var(--fs,12px);gap:.6em;overflow:hidden}
   .layout[hidden]{display:none}
@@ -248,10 +248,11 @@
   .view .card{overflow:visible}
   .flt{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
   .flt+.pill{margin-left:0}
-  .flt span{font:700 10px var(--mono);letter-spacing:.08em;color:var(--dim)}
-  .flt input{width:104px;min-height:34px;background:var(--bg);color:#fff;border:1px solid var(--border2);border-radius:6px;
-    padding:4px 8px;font:700 15px var(--mono);letter-spacing:.06em;text-transform:uppercase;-webkit-user-select:text;user-select:text;-webkit-appearance:none;appearance:none}
-  .flt input::placeholder{color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0}
+  .flt span{font:700 12px var(--mono);letter-spacing:.1em;color:var(--text)}
+  .flt input{width:140px;min-height:40px;background:#16233a;color:#fff;border:2px solid #f0c36d;border-radius:8px;
+    padding:4px 10px;font:800 22px var(--mono);letter-spacing:.08em;text-transform:uppercase;text-align:center;
+    box-shadow:0 0 10px rgba(240,195,109,.25);-webkit-user-select:text;user-select:text;-webkit-appearance:none;appearance:none}
+  .flt input::placeholder{color:#8da2bd;font-weight:500;font-size:14px;text-transform:none;letter-spacing:0}
   .flt input:focus{outline:2px solid var(--blue)}
 </style>
 </head>
