@@ -257,7 +257,7 @@
   .rung{display:grid;grid-template-columns:104px 1fr;gap:8px;align-items:center}
   .rl{font:700 13px var(--mono);letter-spacing:.08em;color:var(--blue)}
   .flt{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
-  #resetAll+.pill{margin-left:0}
+  .newflt{margin-top:18px;padding-top:14px;border-top:1px solid var(--border2);display:flex;flex-direction:column;gap:8px}
   .flt span{font:700 12px var(--mono);letter-spacing:.1em;color:var(--text)}
   .flt input{width:140px;min-height:40px;background:#16233a;color:#fff;border:2px solid #f0c36d;border-radius:8px;
     padding:4px 10px;font:800 22px var(--mono);letter-spacing:.08em;text-transform:uppercase;text-align:center;
@@ -290,7 +290,6 @@
     </div>
   </div>
   <label class="flt"><span>INFO</span><input id="flt" type="text" maxlength="12" placeholder="Flight info" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight info"></label>
-  <button class="btn" id="resetAll">Reset All</button>
   <div class="pill wait" id="status" role="status">CHECKING…</div>
 </div>
 
@@ -1567,7 +1566,12 @@
 
   // Global Reset All: new flight. Clears ORCA checks, flight number, critical fuel,
   // FMC EO values, HF frequencies and the time fields. Airplane / ETOPS selections stay.
-  $("resetAll").addEventListener("click", function(){
+  var newFlt = el("div", "full newflt");
+  newFlt.appendChild(el("div", "hint", "Starting a new flight? This clears everything you entered."));
+  var resetBtn = el("button", "dbtn", "Reset All for a new flight"); resetBtn.id = "resetAll";
+  newFlt.appendChild(resetBtn);
+  viewPre.appendChild(newFlt);
+  resetBtn.addEventListener("click", function(){
     if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, route and times, FMS data, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel and time fields.\n\nAirplane and ETOPS selections are kept.")) return;
     if(window.orcaResetChecks) window.orcaResetChecks();
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
