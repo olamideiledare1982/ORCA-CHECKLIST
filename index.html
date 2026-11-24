@@ -204,6 +204,14 @@
   select.in{padding-right:30px;background-repeat:no-repeat;background-position:right 10px center;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7f96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>")}
   .wrap[hidden],.flt[hidden]{display:none}
+  .sub{font:700 11px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+  .altbody{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;align-items:end;padding:8px}
+  .posrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;padding:8px 8px 0}
+  .posbtns{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cpb .row2:not(.cpbody){padding:8px 8px 0}
+  .posrow .btn{min-height:44px}
+  .fl.req span{color:#f0c36d;font-weight:800}
+  .in.req{background:#2a2210;border:2px solid #f0c36d;color:#fff;font-weight:700}
   .etp{display:contents}
   .etp[hidden]{display:none !important}
   .etpnav{display:flex;gap:8px;flex-wrap:wrap}
@@ -1101,10 +1109,15 @@
     etpRings.appendChild(C.wrap);
   })();
 
-  // ═══════════ 2) ETOPS CRITICAL FUEL (typed per flight) ═══════════
+  // ═══════════ 2) ETOPS FUEL ANALYSIS (typed per flight) ═══════════
   (function(){
-    var C = mkCard("ETOPS Critical Fuel");
-    var en = "", ex = "", cps = [{ fr: "", rq: "" }], savedT = 0;
+    var CA = mkCard("ETOPS Airports");
+    var CP = mkCard("Critical Points");
+    var en = "", ex = "", savedT = 0;
+    var alts = [{ ic: "", from: "", to: "" }, { ic: "", from: "", to: "" }];
+    var cps = [newCP()];
+    function newCP(){ return { a1: "", a2: "", lat: "", lon: "", fr: "", rq: "" }; }
+    function str(v){ return v == null ? "" : String(v); }
 
     (function load(){
       var o = lsJSON(FUEL_KEY);
@@ -1113,35 +1126,47 @@
       if(d && typeof d === "object"){
         if(typeof d.en === "string") en = d.en;
         if(typeof d.ex === "string") ex = d.ex;
+        if(Array.isArray(d.alts) && d.alts.length >= 2){
+          alts = d.alts.map(function(a){ a = a || {}; return { ic: str(a.ic), from: str(a.from), to: str(a.to) }; });
+        }
         if(Array.isArray(d.cps) && d.cps.length >= 1){
           cps = d.cps.map(function(c){
             c = c || {};
-            return { fr: c.fr == null ? "" : String(c.fr), rq: c.rq == null ? "" : String(c.rq) };
+            return { a1: str(c.a1), a2: str(c.a2), lat: str(c.lat), lon: str(c.lon), fr: str(c.fr), rq: str(c.rq) };
           });
         }
       }
       if(typeof o.t === "number") savedT = o.t;
     })();
 
+    // ── airports card ──
     var enIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "e.g. KDEN" });
     var exIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "e.g. EGLL" });
     var row = el("div", "row2");
     row.appendChild(field("ETOPS entry airport", enIn));
     row.appendChild(field("ETOPS exit airport", exIn));
-    C.body.appendChild(row);
+    CA.body.appendChild(row);
+    CA.body.appendChild(el("div", "sub", "ETOPS alternate airports"));
+    var altList = el("div", "cplist");
+    CA.body.appendChild(altList);
+    var addAlt = el("button", "btn big", "Add alternate airport");
+    CA.body.appendChild(addAlt);
+    CA.body.appendChild(el("div", "hint", "Legal times are the window when the airport is legal as an ETOPS alternate, in Zulu (hhmm)."));
 
+    // ── critical points card ──
     var list = el("div", "cplist");
-    C.body.appendChild(list);
+    CP.body.appendChild(list);
     var addBtn = el("button", "btn big", "Add critical point");
-    C.body.appendChild(addBtn);
+    CP.body.appendChild(addBtn);
     var edited = el("div", "edited");
-    C.body.appendChild(edited);
-    var clr = el("button", "dbtn", "Clear critical fuel");
-    C.body.appendChild(clr);
+    CP.body.appendChild(edited);
+    var clr = el("button", "dbtn", "Clear ETOPS fuel analysis");
+    CP.body.appendChild(clr);
     resetters.push(function(){ clr.click(); });
-    C.body.appendChild(el("div", "hint", "Fuel is in thousands of pounds: type 20.0 for 20,000 lb. Copy from the ETOPS Analysis page of the OFP. The OFP governs."));
+    CP.body.appendChild(el("div", "hint", "Fuel is in thousands of pounds: type 20.0 for 20,000 lb. Copy from the ETOPS Analysis page of the OFP. The OFP governs."));
 
-    addStale(C.warn, function(){ return savedT; }, "critical fuel entries");
+    addStale(CA.warn, function(){ return savedT; }, "ETOPS entries");
+    addStale(CP.warn, function(){ return savedT; }, "critical fuel entries");
 
     function num(s){
       s = String(s).trim().replace(",", ".");
@@ -1155,17 +1180,101 @@
       tagEl.textContent = "Margin " + (m < 0 ? "-" : "+") + Math.abs(m).toFixed(1) + "k lb";
       tagEl.classList.add(m < 0 ? "neg" : "pos");
     }
-    function isEmptyCP(c){ return !c.fr.trim() && !c.rq.trim(); }
+    function isEmptyCP(c){ return !(c.a1 + c.a2 + c.lat + c.lon + c.fr + c.rq).trim(); }
+    function isEmptyAlt(a){ return !(a.ic + a.from + a.to).trim(); }
 
     function persist(){
-      var allEmpty = !en.trim() && !ex.trim() && cps.every(isEmptyCP);
+      var allEmpty = !en.trim() && !ex.trim() && cps.every(isEmptyCP) && alts.every(isEmptyAlt);
       if(allEmpty){ lsDel(FUEL_KEY); savedT = 0; }
       else{
         savedT = Date.now();
-        lsSet(FUEL_KEY, JSON.stringify({ d: { en: en, ex: ex, cps: cps.map(function(c){ return { fr: c.fr, rq: c.rq }; }) }, t: savedT }));
+        lsSet(FUEL_KEY, JSON.stringify({ d: { en: en, ex: ex,
+          alts: alts.map(function(a){ return { ic: a.ic, from: a.from, to: a.to }; }),
+          cps: cps.map(function(c){ return { a1: c.a1, a2: c.a2, lat: c.lat, lon: c.lon, fr: c.fr, rq: c.rq }; }) }, t: savedT }));
       }
       setEdited(edited, savedT);
       refreshStale();
+    }
+
+    // Tap-twice remove button shared by both lists.
+    function armedRemove(rm, isEmpty, doRemove){
+      var armed = false, timer = null;
+      function disarm(){ armed = false; clearTimeout(timer); rm.textContent = "Remove"; rm.classList.remove("armed"); }
+      rm.addEventListener("click", function(){
+        if(!isEmpty() && !armed){
+          armed = true; rm.textContent = "Tap again to remove"; rm.classList.add("armed");
+          timer = setTimeout(disarm, 3000);
+          return;
+        }
+        clearTimeout(timer); doRemove();
+      });
+    }
+
+    function renderAlts(){
+      altList.textContent = "";
+      alts.forEach(function(a, i){
+        var blk = el("div", "cpb");
+        var hd = el("div", "cph");
+        hd.appendChild(el("b", null, "ALTN " + (i + 1)));
+        var rm = el("button", "dbtn small", "Remove"); hd.appendChild(rm);
+        blk.appendChild(hd);
+        var bd = el("div", "altbody");
+        var ic = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "ICAO", "aria-label": "Alternate " + (i + 1) + " airport" }); ic.value = a.ic;
+        var f1 = inp({ inputmode: "numeric", maxlength: "4", placeholder: "hhmm", "aria-label": "Alternate " + (i + 1) + " legal from, Zulu" }); f1.value = a.from;
+        var f2 = inp({ inputmode: "numeric", maxlength: "4", placeholder: "hhmm", "aria-label": "Alternate " + (i + 1) + " legal to, Zulu" }); f2.value = a.to;
+        bd.appendChild(field("Airport", ic));
+        bd.appendChild(field("Legal from (Z)", f1));
+        bd.appendChild(field("Legal to (Z)", f2));
+        blk.appendChild(bd);
+        altList.appendChild(blk);
+        ic.addEventListener("input", function(){ a.ic = ic.value.toUpperCase(); ic.value = a.ic; persist(); });
+        [[f1, "from"], [f2, "to"]].forEach(function(x){
+          x[0].addEventListener("input", function(){ x[0].value = x[0].value.replace(/\D/g, "").slice(0, 4); a[x[1]] = x[0].value; persist(); });
+        });
+        armedRemove(rm, function(){ return isEmptyAlt(a); }, function(){
+          if(alts.length <= 2){ alts[i] = { ic: "", from: "", to: "" }; }
+          else alts.splice(i, 1);
+          renderAlts(); persist();
+        });
+      });
+    }
+
+    function copyText(text, btn){
+      function done(ok){
+        var old = btn.getAttribute("data-l") || btn.textContent;
+        btn.setAttribute("data-l", old);
+        btn.textContent = ok ? "Copied" : "Copy failed";
+        setTimeout(function(){ btn.textContent = old; }, 1500);
+      }
+      function fallback(){
+        try{
+          var ta = document.createElement("textarea");
+          ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+          var ok = document.execCommand("copy"); document.body.removeChild(ta); done(ok);
+        }catch(e){ done(false); }
+      }
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(function(){ done(true); }, fallback);
+        }else fallback();
+      }catch(e){ fallback(); }
+    }
+
+    // Split a pasted position like "N45 30.0 W040 00.0", "4530N 04000W" or "45.5, -40.0".
+    function cleanPos(s){ return s.replace(/[\u00B0'"\u2032\u2033]/g, " ").replace(/\s+/g, " ").trim().toUpperCase(); }
+    var LATD = "\\d{2}(?:[\\s\\u00B0]*\\d{2}(?:\\.\\d+)?|\\.\\d+)?", LOND = "\\d{2,3}(?:[\\s\\u00B0]*\\d{2}(?:\\.\\d+)?|\\.\\d+)?";
+    var RE1 = new RegExp("([NS])\\s*(" + LATD + ")[\\s'\\u2032,;/]*([EW])\\s*(" + LOND + ")", "i");
+    var RE2 = new RegExp("(" + LATD + ")[\\s'\\u2032]*([NS])[\\s,;/]*(" + LOND + ")[\\s'\\u2032]*([EW])", "i");
+    function parsePos(t){
+      t = String(t || "").trim();
+      var m = RE1.exec(t);
+      if(m) return { lat: cleanPos(m[1] + m[2]), lon: cleanPos(m[3] + m[4]) };
+      m = RE2.exec(t);
+      if(m) return { lat: cleanPos(m[2] + m[1]), lon: cleanPos(m[4] + m[3]) };
+      m = /^(-?\d+(?:\.\d+)?)[\s,;]+(-?\d+(?:\.\d+)?)$/.exec(t);
+      if(m) return { lat: m[1], lon: m[2] };
+      return null;
     }
 
     function render(){
@@ -1177,29 +1286,69 @@
         var tag = el("span", "tag"); hd.appendChild(tag);
         var rm = el("button", "dbtn small", "Remove"); hd.appendChild(rm);
         blk.appendChild(hd);
+
+        // position (for Jepp)
+        var pos = el("div", "posrow");
+        var lat = inp({ placeholder: "N45 30.0", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " latitude" }); lat.value = c.lat;
+        var lon = inp({ placeholder: "W040 00.0", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " longitude" }); lon.value = c.lon;
+        var cp = el("button", "btn big", "Copy"), ps = el("button", "btn big", "Paste");
+        pos.appendChild(field("Latitude", lat)); pos.appendChild(field("Longitude", lon));
+        var pb = el("div", "posbtns"); pb.appendChild(cp); pb.appendChild(ps); pos.appendChild(pb);
+        blk.appendChild(pos);
+
+        // alternates for this CP
+        var ab = el("div", "row2");
+        var a1 = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "ICAO", "aria-label": "CP-" + (i + 1) + " alternate 1" }); a1.value = c.a1;
+        var a2 = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "ICAO", "aria-label": "CP-" + (i + 1) + " alternate 2" }); a2.value = c.a2;
+        ab.appendChild(field("ETOPS alternate 1", a1)); ab.appendChild(field("ETOPS alternate 2", a2));
+        blk.appendChild(ab);
+
+        // fuel
         var bd = el("div", "row2 cpbody");
-        var fr = inp({ inputmode: "decimal", placeholder: "k lb" }); fr.value = c.fr;
-        var rq = inp({ inputmode: "decimal", placeholder: "k lb" }); rq.value = c.rq;
-        bd.appendChild(field("Fuel remaining (k lb)", fr));
-        bd.appendChild(field("Fuel required (k lb)", rq));
+        var fr = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "CP-" + (i + 1) + " fuel remaining" }); fr.value = c.fr;
+        var rq = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "CP-" + (i + 1) + " fuel required" }); rq.value = c.rq;
+        rq.classList.add("req");
+        var lf = field("Fuel remaining (k lb)", fr), lr = field("Fuel required (k lb)", rq);
+        lr.classList.add("req");
+        bd.appendChild(lf); bd.appendChild(lr);
         blk.appendChild(bd);
         list.appendChild(blk);
         marginTag(c, tag);
 
+        lat.addEventListener("input", function(){ c.lat = lat.value.toUpperCase(); lat.value = c.lat; persist(); });
+        lon.addEventListener("input", function(){ c.lon = lon.value.toUpperCase(); lon.value = c.lon; persist(); });
+        a1.addEventListener("input", function(){ c.a1 = a1.value.toUpperCase(); a1.value = c.a1; persist(); });
+        a2.addEventListener("input", function(){ c.a2 = a2.value.toUpperCase(); a2.value = c.a2; persist(); });
         fr.addEventListener("input", function(){ c.fr = fr.value; marginTag(c, tag); persist(); });
         rq.addEventListener("input", function(){ c.rq = rq.value; marginTag(c, tag); persist(); });
-
-        var armed = false, timer = null;
-        function disarm(){ armed = false; clearTimeout(timer); rm.textContent = "Remove"; rm.classList.remove("armed"); }
-        rm.addEventListener("click", function(){
-          if(!isEmptyCP(c) && !armed){
-            armed = true; rm.textContent = "Tap again to remove"; rm.classList.add("armed");
-            timer = setTimeout(disarm, 3000);
-            return;
-          }
-          clearTimeout(timer);
+        function applyPos(p){
+          c.lat = p.lat; c.lon = p.lon; lat.value = p.lat; lon.value = p.lon; persist();
+        }
+        [lat, lon].forEach(function(f){
+          f.addEventListener("paste", function(e){
+            var t = e.clipboardData ? e.clipboardData.getData("text") : "";
+            var p = parsePos(t);
+            if(p){ e.preventDefault(); applyPos(p); }
+          });
+        });
+        ps.addEventListener("click", function(){
+          var old = ps.getAttribute("data-l") || ps.textContent; ps.setAttribute("data-l", old);
+          function msg(s){ ps.textContent = s; setTimeout(function(){ ps.textContent = old; }, 1800); }
+          try{
+            navigator.clipboard.readText().then(function(t){
+              var p = parsePos(t);
+              if(p){ applyPos(p); msg("Pasted"); } else msg("Not a position");
+            }, function(){ msg("Press and hold a box, tap Paste"); });
+          }catch(e){ msg("Press and hold a box, tap Paste"); }
+        });
+        cp.addEventListener("click", function(){
+          var t = (c.lat.trim() + " " + c.lon.trim()).trim();
+          if(!t){ copyText("", cp); return; }
+          copyText(t, cp);
+        });
+        armedRemove(rm, function(){ return isEmptyCP(c); }, function(){
           var idx = cps.indexOf(c);
-          if(cps.length === 1) cps[0] = { fr: "", rq: "" };
+          if(cps.length === 1) cps[0] = newCP();
           else cps.splice(idx, 1);
           render(); persist();
         });
@@ -1210,8 +1359,16 @@
     enIn.addEventListener("input", function(){ en = enIn.value.toUpperCase(); enIn.value = en; persist(); });
     exIn.addEventListener("input", function(){ ex = exIn.value.toUpperCase(); exIn.value = ex; persist(); });
 
+    addAlt.addEventListener("click", function(){
+      alts.push({ ic: "", from: "", to: "" });
+      renderAlts(); persist();
+      var blks = altList.querySelectorAll(".cpb");
+      var last = blks[blks.length - 1];
+      var first = last.querySelector("input"); if(first) first.focus();
+      last.scrollIntoView({ block: "nearest" });
+    });
     addBtn.addEventListener("click", function(){
-      cps.push({ fr: "", rq: "" });
+      cps.push(newCP());
       render(); persist();
       var ins = list.querySelectorAll(".cpb");
       var first = ins[ins.length - 1].querySelector("input");
@@ -1219,13 +1376,15 @@
       ins[ins.length - 1].scrollIntoView({ block: "nearest" });
     });
     clr.addEventListener("click", function(){
-      en = ""; ex = ""; cps = [{ fr: "", rq: "" }];
+      en = ""; ex = ""; cps = [newCP()];
+      alts = [{ ic: "", from: "", to: "" }, { ic: "", from: "", to: "" }];
       enIn.value = ""; exIn.value = "";
-      render(); lsDel(FUEL_KEY); savedT = 0; setEdited(edited, 0); refreshStale();
+      renderAlts(); render(); lsDel(FUEL_KEY); savedT = 0; setEdited(edited, 0); refreshStale();
     });
 
-    render(); setEdited(edited, savedT);
-    etpFuel.appendChild(C.wrap);
+    renderAlts(); render(); setEdited(edited, savedT);
+    etpFuel.appendChild(CA.wrap);
+    etpFuel.appendChild(CP.wrap);
   })();
 
   // ═══════════ 3) TIME REMAINING ═══════════
