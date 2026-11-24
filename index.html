@@ -7,11 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="ORCA">
+<meta name="apple-mobile-web-app-title" content="Flight Plan">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
-<title>ORCA Checklist</title>
+<title>Flight Plan</title>
 <style>
   :root{
     --bg:#0b0f14; --surface:#111720; --head:#0d1928; --border:#1e2d42; --border2:#2a3f5c;
@@ -117,7 +117,7 @@
   .tabs{display:flex;gap:6px;margin:0;flex:none}
   .tab{flex:none;min-height:34px;padding:4px 14px;font-size:11px}
   .tab small{display:inline;margin-left:6px;font-size:9px}
-  .bar{flex:1 1 90px;margin:0;min-width:0}
+  .bar{flex:1 1 24px;margin:0;min-width:0}
   .btn{padding:6px 10px;min-height:32px;font-size:10px}
   .layout{flex:1;min-height:0;font-size:var(--fs,12px);gap:.6em;overflow:hidden}
   .layout[hidden]{display:none}
@@ -203,7 +203,7 @@
   .in:focus{outline:2px solid var(--blue);outline-offset:0}
   select.in{padding-right:30px;background-repeat:no-repeat;background-position:right 10px center;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7f96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>")}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
   .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .tile{border-radius:6px;padding:10px 12px;border:1px solid var(--border2);background:var(--head);min-width:0}
   .tile .tl{font-size:12px;line-height:1.2}
@@ -246,8 +246,14 @@
     .hfsw{display:contents}
   }
   .view .card{overflow:visible}
+  .mainnav .tab{padding-left:10px;padding-right:10px}
+  .tile .tv.pos{color:var(--done)}
+  .tile .tv.neg{color:#ff6b6b}
+  .ladder{display:flex;flex-direction:column;gap:8px;border-left:3px solid var(--border2);padding-left:10px}
+  .rung{display:grid;grid-template-columns:104px 1fr;gap:8px;align-items:center}
+  .rl{font:700 13px var(--mono);letter-spacing:.08em;color:var(--blue)}
   .flt{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
-  .flt+.pill{margin-left:0}
+  #resetAll+.pill{margin-left:0}
   .flt span{font:700 12px var(--mono);letter-spacing:.1em;color:var(--text)}
   .flt input{width:140px;min-height:40px;background:#16233a;color:#fff;border:2px solid #f0c36d;border-radius:8px;
     padding:4px 10px;font:800 22px var(--mono);letter-spacing:.08em;text-transform:uppercase;text-align:center;
@@ -261,12 +267,13 @@
 <div class="top">
   <div class="brand">
     <div class="ref" id="ref">FM 2602</div>
-    <h1>ORCA <span>GUIDE</span></h1>
+    <h1>FLIGHT <span>PLAN</span></h1>
   </div>
   <div class="mainnav" role="tablist" aria-label="Section">
     <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight</button>
     <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA</button>
     <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight</button>
+    <button class="tab" role="tab" id="nav-fuel" aria-selected="false">Fuel</button>
   </div>
   <div class="orcatools" id="orcatools">
     <div class="tabs" role="tablist">
@@ -275,10 +282,10 @@
     </div>
     <div class="bar">
       <div class="track"><div class="fill" id="fill"></div></div>
-      <button class="btn" id="resetAll">Reset All</button>
     </div>
   </div>
-  <label class="flt"><span>FLT</span><input id="flt" type="text" maxlength="8" placeholder="Flight #" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight number"></label>
+  <label class="flt"><span>INFO</span><input id="flt" type="text" maxlength="12" placeholder="Flight info" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight info"></label>
+  <button class="btn" id="resetAll">Reset All</button>
   <div class="pill wait" id="status" role="status">CHECKING…</div>
 </div>
 
@@ -288,6 +295,7 @@
 </div>
 <div class="view" id="view-pre" hidden></div>
 <div class="view" id="view-in" hidden></div>
+<div class="view" id="view-fuel" hidden></div>
 
 <footer id="foot">Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
 
@@ -698,10 +706,8 @@
     wpCount++; save(); progress();
   });
 
-  document.getElementById("resetAll").addEventListener("click", function(){
-    if(!window.confirm("Clear ALL checks on BOTH pages for a new flight?")) return;
-    pages.forEach(clear); wpCount = 0; save(); progress();
-  });
+  // Used by the global Reset All (second script below).
+  window.orcaResetChecks = function(){ pages.forEach(clear); wpCount = 0; save(); progress(); };
 
   showTab(tab);
   window.addEventListener("resize", fit);
@@ -759,7 +765,7 @@
     ]
   };
 
-  var NAV_KEY = "orca_nav", AOA_KEY = "orca_aoa", FUEL_KEY = "etops_fuel", EO_KEY = "eo_data", HF_KEY = "orca_hf";
+  var LADDER_KEY = "orca_ladder", BINGO_KEY = "orca_bingo", NAV_KEY = "orca_nav", AOA_KEY = "orca_aoa", FUEL_KEY = "etops_fuel", EO_KEY = "eo_data", HF_KEY = "orca_hf";
   var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
   // ───────── helpers ─────────
@@ -798,6 +804,8 @@
       }
     });
   }
+
+  var resetters = [];
 
   function inp(attrs){
     var i = el("input", "in");
@@ -846,12 +854,12 @@
     return t;
   }
 
-  var viewPre = $("view-pre"), viewIn = $("view-in");
+  var viewPre = $("view-pre"), viewIn = $("view-in"), viewFuel = $("view-fuel");
 
   // ───────── standalone note ─────────
   var standalone = (window.navigator.standalone === true) ||
                    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-  [viewPre, viewIn].forEach(function(v){
+  [viewPre, viewIn, viewFuel].forEach(function(v){
     if(!standalone){
       v.appendChild(el("div", "pnote full", "To keep saved entries reliably, install this app: Share, then Add to Home Screen."));
     }
@@ -949,6 +957,7 @@
     C.body.appendChild(edited);
     var clr = el("button", "dbtn", "Clear critical fuel");
     C.body.appendChild(clr);
+    resetters.push(function(){ clr.click(); });
     C.body.appendChild(el("div", "hint", "Fuel is in thousands of pounds: type 20.0 for 20,000 lb. Copy from the ETOPS Analysis page of the OFP. The OFP governs."));
 
     addStale(C.warn, function(){ return savedT; }, "critical fuel entries");
@@ -1104,6 +1113,7 @@
     liveBtn.addEventListener("click", function(){ if(timer) stopLive(); else startLive(); });
     document.addEventListener("visibilitychange", function(){ if(!document.hidden && timer) tick(); });
     compute();
+    resetters.push(function(){ stopLive(); land.value = ""; cur.value = ""; compute(); });
     viewIn.appendChild(C.wrap);
   })();
 
@@ -1131,6 +1141,7 @@
     C.body.appendChild(tiles);
     var edited = el("div", "edited"); C.body.appendChild(edited);
     var clr = el("button", "dbtn", "Clear EO"); C.body.appendChild(clr);
+    resetters.push(function(){ clr.click(); });
     addStale(C.warn, function(){ return t; }, "FMC EO values");
 
     function show(){
@@ -1193,6 +1204,7 @@
     });
     C.body.appendChild(edited);
     var clr = el("button", "dbtn", "Clear all HF"); C.body.appendChild(clr);
+    resetters.push(function(){ clr.click(); });
     C.body.appendChild(el("div", "hint", "Saved on this device. Clear between flights."));
     addStale(C.warn, function(){ return t; }, "HF frequencies");
 
@@ -1213,13 +1225,120 @@
     viewIn.appendChild(C.wrap);
   })();
 
+  // ═══════════ FUEL: LADDER + BINGO ═══════════
+  function kNum(x){
+    x = String(x).trim().replace(",", ".");
+    return /^(\d+(\.\d*)?|\.\d+)$/.test(x) ? parseFloat(x) : null;
+  }
+
+  // Fuel ladder: five values typed from the flight plan, no math.
+  (function(){
+    var C = mkCard("Fuel Ladder");
+    var LAB = ["PLAN GATE", "MIN TO", "ALT", "RSV", "REMF"];
+    var vals = ["", "", "", "", ""], t = 0;
+    (function load(){
+      var o = lsJSON(LADDER_KEY);
+      if(o && typeof o === "object"){
+        if(Array.isArray(o.v)){ for(var i = 0; i < 5; i++) if(o.v[i] != null) vals[i] = String(o.v[i]); }
+        if(typeof o.t === "number") t = o.t;
+      }
+    })();
+    var ladder = el("div", "ladder"), ins = [];
+    LAB.forEach(function(name, i){
+      var r = el("div", "rung");
+      r.appendChild(el("span", "rl", name));
+      var f = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": name + " fuel, k lb" });
+      f.value = vals[i];
+      r.appendChild(f); ladder.appendChild(r); ins.push(f);
+      f.addEventListener("input", function(){ vals[i] = f.value; persist(); });
+    });
+    C.body.appendChild(ladder);
+    var edited = el("div", "edited"); C.body.appendChild(edited);
+    var clr = el("button", "dbtn", "Clear ladder"); C.body.appendChild(clr);
+    C.body.appendChild(el("div", "hint", "Fuel is in thousands of pounds: type 20.0 for 20,000 lb. Copy from the flight plan. The OFP governs."));
+    addStale(C.warn, function(){ return t; }, "fuel ladder entries");
+    resetters.push(function(){ clr.click(); });
+    function persist(){
+      if(vals.every(function(v){ return !v.trim(); })){ lsDel(LADDER_KEY); t = 0; }
+      else{ t = Date.now(); lsSet(LADDER_KEY, JSON.stringify({ v: vals, t: t })); }
+      setEdited(edited, t); refreshStale();
+    }
+    clr.addEventListener("click", function(){
+      for(var i = 0; i < 5; i++){ vals[i] = ""; ins[i].value = ""; }
+      lsDel(LADDER_KEY); t = 0; setEdited(edited, 0); refreshStale();
+    });
+    setEdited(edited, t);
+    viewFuel.appendChild(C.wrap);
+  })();
+
+  // Bingo fuel calculator.
+  // FOM 4.40.15: Bingo = (FOB - predicted fuel at destination) + fuel to ALT + REMF (not less than FAR 00:45)
+  (function(){
+    var C = mkCard("Bingo Fuel");
+    var KEYS = ["fob", "dst", "alt", "min"];
+    var LABELS = ["Fuel on board now (k lb)", "Predicted fuel at destination (k lb)", "Fuel to ALT, ALTN line (k lb)", "REMF, FAR 00:45 or more (k lb)"];
+    var d = { fob: "", dst: "", alt: "", min: "" }, t = 0;
+    (function load(){
+      var o = lsJSON(BINGO_KEY);
+      if(o && typeof o === "object"){
+        KEYS.forEach(function(k){ if(o[k] != null) d[k] = String(o[k]); });
+        if(typeof o.t === "number") t = o.t;
+      }
+    })();
+    var ins = {};
+    var grid = el("div", "cplist");
+    for(var r = 0; r < 2; r++){
+      var row = el("div", "row2");
+      for(var c = 0; c < 2; c++){
+        var k = KEYS[r * 2 + c];
+        var f = inp({ inputmode: "decimal", placeholder: "k lb" });
+        f.value = d[k]; ins[k] = f;
+        row.appendChild(field(LABELS[r * 2 + c], f));
+      }
+      grid.appendChild(row);
+    }
+    C.body.appendChild(grid);
+    var out = tile("neu", "Bingo fuel");
+    C.body.appendChild(out);
+    C.body.appendChild(el("div", "hint", "Bingo = (FOB \u2212 fuel at destination) + fuel to ALT + REMF. Fuel at destination from FMC/HOWGOZIT/OFP. Fuel to ALT is the ALTN line of the OFP fuel ladder. REMF is not less than FAR 00:45 (international: FAR 30 \u00d7 1.5). Fuel is in thousands of pounds: type 8.3 for 8,300 lb. FOM 4.40.15."));
+    var edited = el("div", "edited"); C.body.appendChild(edited);
+    var clr = el("button", "dbtn", "Clear bingo"); C.body.appendChild(clr);
+    addStale(C.warn, function(){ return t; }, "bingo fuel entries");
+    resetters.push(function(){ clr.click(); });
+
+    function show(){
+      var n = KEYS.map(function(k){ return kNum(d[k]); });
+      out.v.className = "tv";
+      if(n.some(function(x){ return x === null; })){ out.v.textContent = "--"; return; }
+      var b = Math.round(((n[0] - n[1]) + n[2] + n[3]) * 10) / 10;
+      out.v.textContent = b.toFixed(1) + "k lb";
+    }
+    function persist(){
+      if(KEYS.every(function(k){ return !d[k].trim(); })){ lsDel(BINGO_KEY); t = 0; }
+      else{
+        t = Date.now();
+        lsSet(BINGO_KEY, JSON.stringify({ fob: d.fob, dst: d.dst, alt: d.alt, min: d.min, t: t }));
+      }
+      setEdited(edited, t); refreshStale();
+    }
+    KEYS.forEach(function(k){
+      ins[k].addEventListener("input", function(){ d[k] = ins[k].value; show(); persist(); });
+    });
+    clr.addEventListener("click", function(){
+      KEYS.forEach(function(k){ d[k] = ""; ins[k].value = ""; });
+      show(); lsDel(BINGO_KEY); t = 0; setEdited(edited, 0); refreshStale();
+    });
+    show(); setEdited(edited, t);
+    viewFuel.appendChild(C.wrap);
+  })();
+
   // ═══════════ NAVIGATION ═══════════
-  var views = { orca: $("view-orca"), pre: viewPre, "in": viewIn };
-  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), "in": $("nav-in") };
+  var views = { orca: $("view-orca"), pre: viewPre, "in": viewIn, fuel: viewFuel };
+  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), "in": $("nav-in"), fuel: $("nav-fuel") };
   var foot = $("foot"), ref = $("ref");
   var footOrca = foot.textContent;
   var footNew = "Reference aid only. The Flight Manual and OFP govern.";
-  var REF = { pre: "ORCA · PREFLIGHT", "in": "ORCA · INFLIGHT" };
+  var REF = { pre: "ORCA · PREFLIGHT", "in": "ORCA · INFLIGHT", fuel: "FUEL" };
 
   function showView(v, persist){
     Object.keys(views).forEach(function(k){
@@ -1243,6 +1362,17 @@
   flt.addEventListener("input", function(){
     flt.value = flt.value.toUpperCase();
     if(flt.value.trim()) lsSet(FLT_KEY, flt.value); else lsDel(FLT_KEY);
+  });
+
+  resetters.push(function(){ flt.value = ""; lsDel(FLT_KEY); });
+
+  // Global Reset All: new flight. Clears ORCA checks, flight number, critical fuel,
+  // FMC EO values, HF frequencies and the time fields. Airplane / ETOPS selections stay.
+  $("resetAll").addEventListener("click", function(){
+    if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel and time fields.\n\nAirplane and ETOPS selections are kept.")) return;
+    if(window.orcaResetChecks) window.orcaResetChecks();
+    resetters.forEach(function(f){ try{ f(); }catch(e){} });
+    refreshStale();
   });
 
   var start = lsGet(NAV_KEY);

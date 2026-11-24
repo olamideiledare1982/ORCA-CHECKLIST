@@ -1,6 +1,6 @@
 {
-  "name": "ORCA Checklist",
-  "short_name": "ORCA",
+  "name": "Flight Plan",
+  "short_name": "Flight Plan",
   "description": "ORCA Guide checklist for 757/767 oceanic operations",
   "start_url": "./index.html",
   "scope": "./",
