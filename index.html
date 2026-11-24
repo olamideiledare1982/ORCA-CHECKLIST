@@ -204,6 +204,9 @@
   select.in{padding-right:30px;background-repeat:no-repeat;background-position:right 10px center;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7f96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>")}
   .wrap[hidden],.flt[hidden]{display:none}
+  .etp{display:contents}
+  .etp[hidden]{display:none !important}
+  .etpnav{display:flex;gap:8px;flex-wrap:wrap}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
   .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .tile{border-radius:6px;padding:10px 12px;border:1px solid var(--border2);background:var(--head);min-width:0}
@@ -272,10 +275,10 @@
   </div>
   <div class="mainnav" role="tablist" aria-label="Section">
     <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight</button>
-    <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA</button>
-    <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight</button>
     <button class="tab" role="tab" id="nav-fuel" aria-selected="false">Fuel</button>
+    <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight</button>
     <button class="tab" role="tab" id="nav-new" aria-selected="false">ETOPS</button>
+    <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA</button>
   </div>
   <div class="orcatools" id="orcatools">
     <div class="tabs" role="tablist">
@@ -859,7 +862,9 @@
 
   var viewPre = $("view-pre"), viewIn = $("view-in"), viewFuel = $("view-fuel"), viewNew = $("view-new");
   // Removed from Preflight but kept in code (never shown): ETOPS AOA and ETOPS critical fuel.
-  var viewHold = document.createElement("div");
+  // ETOPS tab has two pages: Fuel Analysis and ETOPS Rings.
+  var etpNav = el("div", "full etpnav");
+  var etpFuel = el("div", "etp"), etpRings = el("div", "etp");
   var flt = $("flt");
 
   // ───────── standalone note ─────────
@@ -911,6 +916,17 @@
     fltIn.value = flt.value;
 
     C.body.appendChild(field("Flight number", fltIn));
+    var apSaved = lsJSON(AOA_KEY) || {};
+    var apId = FM.airplanes.some(function(a){ return a.id === apSaved.ap; }) ? apSaved.ap : FM.defaultAirplane;
+    var apSel = sel(FM.airplanes.map(function(a){ return [a.id, a.name]; }), apId);
+    apSel.setAttribute("aria-label", "Aircraft type");
+    C.body.appendChild(field("AIRCRAFT TYPE (used for the ETOPS rings)", apSel));
+    apSel.addEventListener("change", function(){
+      var o = lsJSON(AOA_KEY) || {};
+      o.ap = apSel.value;
+      lsSet(AOA_KEY, JSON.stringify(o));
+      window.dispatchEvent(new Event("apsync"));
+    });
     var rowA = el("div", "row2"); rowA.appendChild(field("DEP", depIn)); rowA.appendChild(field("ARR", arrIn));
     C.body.appendChild(rowA);
     var rowB = el("div", "row2"); rowB.appendChild(field(TL[0][1], tIn.out)); rowB.appendChild(field(TL[1][1], tIn.off));
@@ -941,16 +957,6 @@
 
     // ── FMS data card ──
     var F = mkCard("FMS Data");
-    var apSaved = lsJSON(AOA_KEY) || {};
-    var apId = FM.airplanes.some(function(a){ return a.id === apSaved.ap; }) ? apSaved.ap : FM.defaultAirplane;
-    var apSel = sel(FM.airplanes.map(function(a){ return [a.id, a.name]; }), apId);
-    apSel.setAttribute("aria-label", "Aircraft type");
-    F.body.appendChild(field("AIRCRAFT TYPE (used for the ETOPS rings)", apSel));
-    apSel.addEventListener("change", function(){
-      var o = lsJSON(AOA_KEY) || {};
-      o.ap = apSel.value;
-      lsSet(AOA_KEY, JSON.stringify(o));
-    });
     var ZF = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "ZFW, k lb" });
     var RS = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "Reserves, k lb" });
     var CZ = inp({ placeholder: "FL350", maxlength: "6", autocapitalize: "characters", "aria-label": "Cruise altitude" });
@@ -1040,7 +1046,7 @@
     var ok = FM.airplanes.every(function(a){ return a.m290.length === n && a.m310.length === n; });
     if(!ok){
       C.body.appendChild(el("div", "msg", "FM data block error: check array lengths."));
-      viewHold.appendChild(C.wrap);
+      etpRings.appendChild(C.wrap);
       return;
     }
 
@@ -1049,7 +1055,7 @@
     var spId = FM.speeds[saved.sp] ? saved.sp : FM.defaultSpeed;
     var rt = FM.ruleTimes.indexOf(+saved.rt) >= 0 ? +saved.rt : FM.defaultRule;
 
-    var apSel = sel(FM.airplanes.map(function(a){ return [a.id, a.name]; }), apId);
+    var apTile = tile("neu", "Aircraft (set on Preflight)");
     var spSel = sel(FM.speedOrder.map(function(k){ return [k, FM.speeds[k].label]; }), spId);
     var rtSel = sel(FM.ruleTimes.map(function(m){ return [String(m), m + " min"]; }), String(rt));
 
@@ -1059,10 +1065,10 @@
     var ring = tile("neu", "");
     var ringSub = el("div", "hint");
 
-    C.body.appendChild(field("Airplane", apSel));
-    C.body.appendChild(field("Diversion speed (" + FM.ruleTimes[1] + " min and up)", spSel));
+    C.body.appendChild(apTile);
     C.body.appendChild(tiles);
-    C.body.appendChild(field("Rule time", rtSel));
+    C.body.appendChild(field("Dispatched ETOPS time", rtSel));
+    C.body.appendChild(field("Diversion speed (" + FM.ruleTimes[1] + " min and up)", spSel));
     ring.appendChild(ringSub);
     C.body.appendChild(ring);
     C.body.appendChild(el("div", "hint", "The " + FM.ruleTimes[0] + " minute ring is always " + FM.d60Speed +
@@ -1071,6 +1077,7 @@
 
     function render(){
       var a = FM.airplanes.filter(function(x){ return x.id === apId; })[0];
+      apTile.v.textContent = a.name;
       var dist, tag;
       if(rt === FM.ruleTimes[0]){ dist = a.d60; tag = FM.d60Speed; }
       else{ dist = a[spId][FM.ruleTimes.indexOf(rt) - 1]; tag = FM.speeds[spId].tag; }
@@ -1080,12 +1087,19 @@
       ring.v.textContent = dist + " nm";
       ringSub.textContent = "Speed used: " + tag;
     }
-    function persist(){ lsSet(AOA_KEY, JSON.stringify({ ap: apId, sp: spId, rt: rt })); }
-    apSel.addEventListener("change", function(){ apId = apSel.value; render(); persist(); });
+    function persist(){
+      var o = lsJSON(AOA_KEY) || {};
+      o.sp = spId; o.rt = rt;
+      lsSet(AOA_KEY, JSON.stringify(o));
+    }
+    window.addEventListener("apsync", function(){
+      var o = lsJSON(AOA_KEY) || {};
+      if(FM.airplanes.some(function(a){ return a.id === o.ap; })){ apId = o.ap; render(); }
+    });
     spSel.addEventListener("change", function(){ spId = spSel.value; render(); persist(); });
     rtSel.addEventListener("change", function(){ rt = +rtSel.value; render(); persist(); });
     render();
-    viewHold.appendChild(C.wrap);
+    etpRings.appendChild(C.wrap);
   })();
 
   // ═══════════ 2) ETOPS CRITICAL FUEL (typed per flight) ═══════════
@@ -1212,7 +1226,7 @@
     });
 
     render(); setEdited(edited, savedT);
-    viewHold.appendChild(C.wrap);
+    etpFuel.appendChild(C.wrap);
   })();
 
   // ═══════════ 3) TIME REMAINING ═══════════
@@ -1560,7 +1574,23 @@
     refreshStale();
   });
 
-  viewNew.appendChild(el("div", "hint", "Nothing here yet."));
+  (function(){
+    var PG_KEY = "orca_etops_pg", pg = lsGet(PG_KEY) === "rings" ? "rings" : "fuel";
+    var bF = el("button", "btn big", "Fuel Analysis"), bR = el("button", "btn big", "ETOPS Rings");
+    etpNav.appendChild(bF); etpNav.appendChild(bR);
+    viewNew.appendChild(etpNav); viewNew.appendChild(etpFuel); viewNew.appendChild(etpRings);
+    function showPg(p, save){
+      pg = p;
+      etpFuel.hidden = (p !== "fuel"); etpRings.hidden = (p !== "rings");
+      bF.classList.toggle("on", p === "fuel"); bR.classList.toggle("on", p === "rings");
+      bF.setAttribute("aria-pressed", p === "fuel" ? "true" : "false");
+      bR.setAttribute("aria-pressed", p === "rings" ? "true" : "false");
+      if(save) lsSet(PG_KEY, p);
+    }
+    bF.addEventListener("click", function(){ showPg("fuel", true); });
+    bR.addEventListener("click", function(){ showPg("rings", true); });
+    showPg(pg, false);
+  })();
 
   var start = lsGet(NAV_KEY);
   if(!views[start]) start = "pre";
