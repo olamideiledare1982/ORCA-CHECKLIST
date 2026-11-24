@@ -110,14 +110,14 @@
   html,body{height:100%;overflow:hidden}
   body{display:flex;flex-direction:column;gap:6px;height:100vh;height:100dvh;
     padding:max(6px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
-  .top{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--ual);padding-bottom:5px;flex:none}
+  .top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;border-bottom:2px solid var(--ual);padding-bottom:5px;flex:none}
   .brand{flex:none}
   .ref{font:8px var(--mono);margin:0 0 1px}
   h1{font-size:17px}
   .tabs{display:flex;gap:6px;margin:0;flex:none}
   .tab{flex:none;min-height:34px;padding:4px 14px;font-size:11px}
   .tab small{display:inline;margin-left:6px;font-size:9px}
-  .bar{flex:1;margin:0;min-width:0}
+  .bar{flex:1 1 200px;margin:0;min-width:0}
   .btn{padding:6px 10px;min-height:32px;font-size:10px}
   .layout{flex:1;min-height:0;font-size:var(--fs,12px);gap:.6em;overflow:hidden}
   .layout[hidden]{display:none}
@@ -140,7 +140,7 @@
   .layout table.dev th,.layout table.dev td{padding:.25em .5em}
   footer{flex:none;margin:0;font-size:8px;line-height:1.2}
   @media (max-width:640px){.layout{overflow:auto}}
-  .pill{flex:none;font:700 10px var(--mono);letter-spacing:.08em;padding:7px 10px;border-radius:999px;
+  .pill{margin-left:auto;flex:none;font:700 10px var(--mono);letter-spacing:.08em;padding:7px 10px;border-radius:999px;
     border:1px solid var(--border2);color:var(--dim);white-space:nowrap}
   .pill::before{content:"\25CF";margin-right:6px}
   .pill.wait{color:var(--wp);border-color:rgba(240,165,0,.5)}
@@ -157,12 +157,11 @@
   .layout.c1 .item,.layout.c2 .item{padding-top:.3em;padding-bottom:.3em}
   .layout.c1 .item{padding-top:.5em;padding-bottom:.5em;min-height:40px}
   @media (max-width:760px){
-    .top{flex-wrap:wrap;gap:6px 8px}
+    .top{gap:6px 8px}
     .ref,.tab small{display:none}
     .tab{padding:4px 12px}
-    .bar{order:5;flex:1 1 100%}
-    .pill{margin-left:auto}
   }
+  @media (max-width:1300px){.tab small{display:none}}
   .layout[hidden]{display:none !important}
   * {touch-action:manipulation}
   /* paged mode (narrow windows): one section at a time + chip bar */
@@ -180,6 +179,73 @@
   .layout:not(.c1) #card-cbg{border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:-.6em}
   .layout:not(.c1) #card-cbg2{border-top:0;border-top-left-radius:0;border-top-right-radius:0}
   .layout.c1 .item{padding-top:.4em;padding-bottom:.4em;min-height:34px}
+
+  /* ===== NAV + PREFLIGHT / INFLIGHT VIEWS ===== */
+  :root{--dng-bg:rgba(220,53,69,.14);--dng-bd:#c0392b;--dng-fg:#ff8a8a;--acc-bg:rgba(0,119,200,.16);--acc-bd:rgba(0,119,200,.55);--acc-fg:#7cc7ff}
+  .mainnav{display:flex;gap:6px;flex:none}
+  .orcatools{display:contents}
+  .orcatools[hidden]{display:none !important}
+  #view-orca{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
+  #view-orca[hidden]{display:none !important}
+  .view{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:10px;align-content:start;align-items:start;padding-bottom:6px}
+  .view[hidden]{display:none !important}
+  .view .full{grid-column:1/-1}
+  .pnote{font-size:11px;color:var(--wp);background:var(--wp-bg);border:1px solid rgba(240,165,0,.3);border-radius:6px;padding:8px 10px}
+  .wrap{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .warn{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.5);color:#ff9b9b;border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.3}
+  .warn[hidden]{display:none !important}
+  .body{padding:10px;display:flex;flex-direction:column;gap:10px}
+  .fl{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .fl>span{font:700 10px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .in{width:100%;min-width:0;min-height:44px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;
+    padding:8px 10px;font:16px var(--ui);-webkit-user-select:text;user-select:text;-webkit-appearance:none;appearance:none}
+  .in:focus{outline:2px solid var(--blue);outline-offset:0}
+  select.in{padding-right:30px;background-repeat:no-repeat;background-position:right 10px center;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7f96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>")}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tile{border-radius:6px;padding:10px 12px;border:1px solid var(--border2);background:var(--head);min-width:0}
+  .tile .tl{font-size:12px;line-height:1.2}
+  .tile .tv{font-size:24px;font-weight:800;line-height:1.2;margin-top:2px;overflow-wrap:anywhere}
+  .tile.acc{background:var(--acc-bg);border-color:var(--acc-bd);color:var(--acc-fg)}
+  .tile.neu{color:#fff}
+  .tile.neu .tl{color:var(--dim)}
+  .tile.dng{background:var(--dng-bg);border-color:var(--dng-bd);color:var(--dng-fg)}
+  .hint{font-size:11px;color:var(--dim);line-height:1.35}
+  .tile .hint{margin-top:2px}
+  .src2{font:9px var(--mono);color:var(--dim);border-top:1px solid var(--border);padding-top:8px}
+  .msg{font-size:12px;color:#ff9b9b}
+  .msg[hidden],.hint[hidden]{display:none !important}
+  .tag{font:700 11px var(--mono);padding:4px 9px;border-radius:999px;border:1px solid var(--border2);color:var(--dim);white-space:nowrap}
+  .tag.pos{color:var(--done);border-color:rgba(0,212,160,.5);background:var(--done-bg)}
+  .tag.neg{color:#ff6b6b;border-color:rgba(255,107,107,.6);background:rgba(255,107,107,.08)}
+  .btn.big{min-height:44px;font-size:11px;padding:8px 14px}
+  .btn.on{color:#fff;border-color:var(--wp);background:var(--wp-bg)}
+  .dbtn{min-height:44px;font:700 11px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--dng-fg);background:none;
+    border:1px solid var(--dng-bd);border-radius:6px;padding:8px 14px}
+  .dbtn:active{background:rgba(255,107,107,.15)}
+  .dbtn.small{min-height:36px;padding:4px 10px;font-size:10px}
+  .dbtn.armed{background:rgba(255,107,107,.2);color:#fff}
+  .cplist{display:flex;flex-direction:column;gap:10px}
+  .cpb{border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,.02)}
+  .cph{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .cph b{font:700 12px var(--mono);color:var(--blue);letter-spacing:.06em}
+  .cph .tag{margin-left:auto}
+  .cpbody{padding:8px}
+  .edited{font:10px var(--mono);color:var(--dim)}
+  .eorow{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:8px;align-items:center}
+  .eolab{font:700 10px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .hfcard{container-type:inline-size}
+  .hfrow{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-items:center}
+  .hfn{font:700 13px var(--mono);color:var(--blue);width:1.2em;text-align:center}
+  .hfsw{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:center}
+  .hfat{font:700 14px var(--mono);color:var(--dim);width:1.2em;text-align:center}
+  @container (min-width:760px){
+    .hfrow{grid-template-columns:auto 1fr 1fr auto 1.7fr}
+    .hfsw{display:contents}
+  }
+  .view .card{overflow:visible}
 </style>
 </head>
 <body>
@@ -189,22 +255,32 @@
     <div class="ref" id="ref">FM 2602</div>
     <h1>ORCA <span>GUIDE</span></h1>
   </div>
-  <div class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tab0" aria-selected="true">PAGE 1 <small>4.10.4 Checklist</small></button>
-    <button class="tab" role="tab" id="tab1" aria-selected="false">PAGE 2 <small>4.10.5 General</small></button>
+  <div class="mainnav" role="tablist" aria-label="Section">
+    <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA</button>
+    <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight</button>
+    <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight</button>
   </div>
-  <div class="bar">
-    <div class="track"><div class="fill" id="fill"></div></div>
-    <div class="count" id="count">0 / 0</div>
-    <button class="btn" id="resetAll">Reset All</button>
+  <div class="orcatools" id="orcatools">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab0" aria-selected="true">PAGE 1 <small>4.10.4 Checklist</small></button>
+      <button class="tab" role="tab" id="tab1" aria-selected="false">PAGE 2 <small>4.10.5 General</small></button>
+    </div>
+    <div class="bar">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <button class="btn" id="resetAll">Reset All</button>
+    </div>
   </div>
   <div class="pill wait" id="status" role="status">CHECKING…</div>
 </div>
 
+<div id="view-orca">
 <div class="layout" id="p0"></div>
 <div class="layout" id="p1" hidden></div>
+</div>
+<div class="view" id="view-pre" hidden></div>
+<div class="view" id="view-in" hidden></div>
 
-<footer>Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
+<footer id="foot">Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
 
 <script>
 (function(){
@@ -505,7 +581,7 @@
       var id = c.id.replace("card-", "");
       var b = el("button", "chip" + (id === "wp" ? " isWp" : ""));
       b.dataset.k = k;
-      b.innerHTML = SHORT[id] + "<small></small>";
+      b.textContent = SHORT[id];
       bar.appendChild(b);
     });
     L.parentNode.insertBefore(bar, L);
@@ -517,6 +593,7 @@
   var pages = [document.getElementById("p0"), document.getElementById("p1")];
   var tabs  = [document.getElementById("tab0"), document.getElementById("tab1")];
 
+  function $orca(){ return document.getElementById("view-orca"); }
   // Pick the best layout for this window: 3 columns, else 2, else 1 (scrolls).
   function setMode(L,m){ L.classList.remove("c1","c2","c3"); L.classList.add(m); }
   function over(L,m){
@@ -529,6 +606,7 @@
     return !over(L,m);
   }
   function fit(){
+    if($orca().hidden) return;
     var L = pages[tab]; if(!L) return;
     var w = window.innerWidth;
     document.body.classList.remove("paged");
@@ -551,7 +629,6 @@
       list.forEach(function(c, k){
         var n = c.querySelectorAll(".item").length, d = c.querySelectorAll(".item.done").length;
         var b = chips[pi].children[k];
-        b.querySelector("small").textContent = d + "/" + n;
         b.classList.toggle("full", n > 0 && d === n);
       });
     });
@@ -572,7 +649,6 @@
     var all = cur.querySelectorAll(".item").length;
     var done = cur.querySelectorAll(".item.done").length;
     document.getElementById("fill").style.width = (all ? done/all*100 : 0) + "%";
-    document.getElementById("count").textContent = done + " / " + all;
     if(wpCountEl) wpCountEl.textContent = "#" + (wpCount + 1);
     updateChips();
   }
@@ -620,6 +696,10 @@
 
   showTab(tab);
   window.addEventListener("resize", fit);
+  window.addEventListener("orcashown", function(){
+    document.getElementById("ref").textContent = PAGES[tab].ref;
+    fit();
+  });
   window.addEventListener("orientationchange", function(){ setTimeout(fit, 200); });
 
   // ───────── SERVICE WORKER ─────────
@@ -635,6 +715,522 @@
   }else{
     status.textContent = "NOT OFFLINE"; status.className = "pill bad";
   }
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+
+  // ═══════════════════════════ FM DATA BLOCK ═══════════════════════════
+  // Every FM-derived number lives here. The ETOPS card (including its source line,
+  // labels and notes) is generated from this block only.
+  // RE-CHECK THESE VALUES AGAINST EACH FM REVISION.
+  // Condition: one engine inoperative (windmilling), max continuous thrust on the
+  // remaining engine. Distances in nm. d60 is the 60 minute ring (always d60Speed).
+  // m290 / m310 hold the values for ruleTimes[1..] in order (75, 90, 120, 138, 180).
+  var FM = {
+    source: "UAL FM 4.10.1, ETOPS AOA Diversion Time/Distance",
+    date: "23 OCT 26",
+    ruleTimes: [60, 75, 90, 120, 138, 180],
+    defaultRule: 138,
+    staleHours: 12,
+    d60Speed: ".80/310",
+    speeds: {
+      m290: { label: ".80M / 290 KIAS", tag: ".80/290" },
+      m310: { label: ".80M / 310 KIAS", tag: ".80/310" }
+    },
+    speedOrder: ["m290", "m310"],
+    defaultSpeed: "m290",
+    defaultAirplane: "752",
+    airplanes: [
+      { id: "752", name: "757-200", d60: 430, m290: [519, 620, 822, 943, 1225], m310: [534, 638, 845, 969, 1260] },
+      { id: "753", name: "757-300", d60: 416, m290: [500, 597, 790, 906, 1177], m310: [516, 615, 814, 933, 1212] },
+      { id: "763", name: "767-300", d60: 431, m290: [516, 617, 819, 940, 1223], m310: [536, 641, 851, 977, 1270] },
+      { id: "764", name: "767-400", d60: 424, m290: [505, 603, 800, 918, 1193], m310: [526, 629, 834, 958, 1245] }
+    ]
+  };
+
+  var NAV_KEY = "orca_nav", AOA_KEY = "orca_aoa", FUEL_KEY = "etops_fuel", EO_KEY = "eo_data", HF_KEY = "orca_hf";
+  var MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+  // ───────── helpers ─────────
+  function $(id){ return document.getElementById(id); }
+  function el(tag, cls, text){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    if(text != null) e.textContent = text;
+    return e;
+  }
+  function pad2(n){ return (n < 10 ? "0" : "") + n; }
+  function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+  function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  function lsJSON(k){ try{ var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+
+  function fmtZ(ms){
+    var d = new Date(ms);
+    return pad2(d.getUTCDate()) + MONTHS[d.getUTCMonth()] + " " + pad2(d.getUTCHours()) + pad2(d.getUTCMinutes()) + "Z";
+  }
+  function setEdited(node, t){ node.textContent = t ? "Last edited " + fmtZ(t) : "Not saved yet"; }
+
+  // Stale-entry warnings (older than FM.staleHours).
+  var stales = [];
+  function addStale(warnEl, getT, what){
+    stales.push({ w: warnEl, t: getT, what: what });
+  }
+  function refreshStale(){
+    stales.forEach(function(s){
+      var t = s.t(), hrs = t ? (Date.now() - t) / 36e5 : 0;
+      if(t && hrs > FM.staleHours){
+        s.w.textContent = "These " + s.what + " were saved " + Math.floor(hrs) + " h ago and may be from a previous flight. Verify them or clear.";
+        s.w.hidden = false;
+      }else{
+        s.w.hidden = true;
+      }
+    });
+  }
+
+  function inp(attrs){
+    var i = el("input", "in");
+    i.type = "text";
+    i.setAttribute("autocomplete", "off");
+    i.setAttribute("autocorrect", "off");
+    i.setAttribute("autocapitalize", "off");
+    i.setAttribute("spellcheck", "false");
+    for(var k in attrs){ i.setAttribute(k, attrs[k]); }
+    return i;
+  }
+  function field(label, node){
+    var l = el("label", "fl");
+    l.appendChild(el("span", null, label));
+    l.appendChild(node);
+    return l;
+  }
+  function sel(options, value){
+    var s = el("select", "in");
+    options.forEach(function(o){
+      var op = el("option", null, o[1]); op.value = o[0]; s.appendChild(op);
+    });
+    s.value = value;
+    return s;
+  }
+  function mkCard(title){
+    var wrap = el("div", "wrap");
+    var warn = el("div", "warn"); warn.hidden = true; warn.setAttribute("role", "alert");
+    wrap.appendChild(warn);
+    var card = el("section", "card");
+    if(title){
+      var ch = el("div", "ch");
+      ch.appendChild(el("span", "ct", title));
+      card.appendChild(ch);
+    }
+    var body = el("div", "body");
+    card.appendChild(body);
+    wrap.appendChild(card);
+    return { wrap: wrap, warn: warn, card: card, body: body };
+  }
+  function tile(kind, label){
+    var t = el("div", "tile " + kind);
+    var l = el("div", "tl", label), v = el("div", "tv", "--");
+    t.appendChild(l); t.appendChild(v);
+    t.v = v; t.l = l;
+    return t;
+  }
+
+  var viewPre = $("view-pre"), viewIn = $("view-in");
+
+  // ───────── standalone note ─────────
+  var standalone = (window.navigator.standalone === true) ||
+                   (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  [viewPre, viewIn].forEach(function(v){
+    if(!standalone){
+      v.appendChild(el("div", "pnote full", "To keep saved entries reliably, install this app: Share, then Add to Home Screen."));
+    }
+  });
+
+  // ═══════════ 1) AIRPLANE + ETOPS AOA (from FM data block) ═══════════
+  (function(){
+    var C = mkCard("Airplane + ETOPS AOA");
+    var n = FM.ruleTimes.length - 1;
+    var ok = FM.airplanes.every(function(a){ return a.m290.length === n && a.m310.length === n; });
+    if(!ok){
+      C.body.appendChild(el("div", "msg", "FM data block error: check array lengths."));
+      viewPre.appendChild(C.wrap);
+      return;
+    }
+
+    var saved = lsJSON(AOA_KEY) || {};
+    var apId = FM.airplanes.some(function(a){ return a.id === saved.ap; }) ? saved.ap : FM.defaultAirplane;
+    var spId = FM.speeds[saved.sp] ? saved.sp : FM.defaultSpeed;
+    var rt = FM.ruleTimes.indexOf(+saved.rt) >= 0 ? +saved.rt : FM.defaultRule;
+
+    var apSel = sel(FM.airplanes.map(function(a){ return [a.id, a.name]; }), apId);
+    var spSel = sel(FM.speedOrder.map(function(k){ return [k, FM.speeds[k].label]; }), spId);
+    var rtSel = sel(FM.ruleTimes.map(function(m){ return [String(m), m + " min"]; }), String(rt));
+
+    var t1 = tile("acc", FM.ruleTimes[0] + "-minute distance");
+    var t2 = tile("acc", FM.ruleTimes[0] + "-minute speed");
+    var tiles = el("div", "tiles"); tiles.appendChild(t1); tiles.appendChild(t2);
+    var ring = tile("neu", "");
+    var ringSub = el("div", "hint");
+
+    C.body.appendChild(field("Airplane", apSel));
+    C.body.appendChild(field("Diversion speed (" + FM.ruleTimes[1] + " min and up)", spSel));
+    C.body.appendChild(tiles);
+    C.body.appendChild(field("Rule time", rtSel));
+    ring.appendChild(ringSub);
+    C.body.appendChild(ring);
+    C.body.appendChild(el("div", "hint", "The " + FM.ruleTimes[0] + " minute ring is always " + FM.d60Speed +
+      ". The speed selector applies to " + FM.ruleTimes[1] + " minutes and up."));
+    C.body.appendChild(el("div", "src2", FM.source + ", " + FM.date));
+
+    function render(){
+      var a = FM.airplanes.filter(function(x){ return x.id === apId; })[0];
+      var dist, tag;
+      if(rt === FM.ruleTimes[0]){ dist = a.d60; tag = FM.d60Speed; }
+      else{ dist = a[spId][FM.ruleTimes.indexOf(rt) - 1]; tag = FM.speeds[spId].tag; }
+      t1.v.textContent = a.d60 + " nm";
+      t2.v.textContent = FM.d60Speed;
+      ring.l.textContent = "Ring radius, " + rt + " min";
+      ring.v.textContent = dist + " nm";
+      ringSub.textContent = "Speed used: " + tag;
+    }
+    function persist(){ lsSet(AOA_KEY, JSON.stringify({ ap: apId, sp: spId, rt: rt })); }
+    apSel.addEventListener("change", function(){ apId = apSel.value; render(); persist(); });
+    spSel.addEventListener("change", function(){ spId = spSel.value; render(); persist(); });
+    rtSel.addEventListener("change", function(){ rt = +rtSel.value; render(); persist(); });
+    render();
+    viewPre.appendChild(C.wrap);
+  })();
+
+  // ═══════════ 2) ETOPS CRITICAL FUEL (typed per flight) ═══════════
+  (function(){
+    var C = mkCard("ETOPS Critical Fuel");
+    var en = "", ex = "", cps = [{ fr: "", rq: "" }], savedT = 0;
+
+    (function load(){
+      var o = lsJSON(FUEL_KEY);
+      if(!o || typeof o !== "object") return;
+      var d = o.d;
+      if(d && typeof d === "object"){
+        if(typeof d.en === "string") en = d.en;
+        if(typeof d.ex === "string") ex = d.ex;
+        if(Array.isArray(d.cps) && d.cps.length >= 1){
+          cps = d.cps.map(function(c){
+            c = c || {};
+            return { fr: c.fr == null ? "" : String(c.fr), rq: c.rq == null ? "" : String(c.rq) };
+          });
+        }
+      }
+      if(typeof o.t === "number") savedT = o.t;
+    })();
+
+    var enIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "e.g. KDEN" });
+    var exIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "e.g. EGLL" });
+    var row = el("div", "row2");
+    row.appendChild(field("ETOPS entry airport", enIn));
+    row.appendChild(field("ETOPS exit airport", exIn));
+    C.body.appendChild(row);
+
+    var list = el("div", "cplist");
+    C.body.appendChild(list);
+    var addBtn = el("button", "btn big", "Add critical point");
+    C.body.appendChild(addBtn);
+    var edited = el("div", "edited");
+    C.body.appendChild(edited);
+    var clr = el("button", "dbtn", "Clear critical fuel");
+    C.body.appendChild(clr);
+    C.body.appendChild(el("div", "hint", "Fuel is in thousands of pounds: type 20.0 for 20,000 lb. Copy from the ETOPS Analysis page of the OFP. The OFP governs."));
+
+    addStale(C.warn, function(){ return savedT; }, "critical fuel entries");
+
+    function num(s){
+      s = String(s).trim().replace(",", ".");
+      return /^(\d+(\.\d*)?|\.\d+)$/.test(s) ? parseFloat(s) : null;
+    }
+    function marginTag(c, tagEl){
+      var a = num(c.fr), b = num(c.rq);
+      tagEl.className = "tag";
+      if(a === null || b === null){ tagEl.textContent = "Margin --"; return; }
+      var m = Math.round((a - b) * 10) / 10 + 0;
+      tagEl.textContent = "Margin " + (m < 0 ? "-" : "+") + Math.abs(m).toFixed(1) + "k lb";
+      tagEl.classList.add(m < 0 ? "neg" : "pos");
+    }
+    function isEmptyCP(c){ return !c.fr.trim() && !c.rq.trim(); }
+
+    function persist(){
+      var allEmpty = !en.trim() && !ex.trim() && cps.every(isEmptyCP);
+      if(allEmpty){ lsDel(FUEL_KEY); savedT = 0; }
+      else{
+        savedT = Date.now();
+        lsSet(FUEL_KEY, JSON.stringify({ d: { en: en, ex: ex, cps: cps.map(function(c){ return { fr: c.fr, rq: c.rq }; }) }, t: savedT }));
+      }
+      setEdited(edited, savedT);
+      refreshStale();
+    }
+
+    function render(){
+      list.textContent = "";
+      cps.forEach(function(c, i){
+        var blk = el("div", "cpb");
+        var hd = el("div", "cph");
+        hd.appendChild(el("b", null, "CP-" + (i + 1)));
+        var tag = el("span", "tag"); hd.appendChild(tag);
+        var rm = el("button", "dbtn small", "Remove"); hd.appendChild(rm);
+        blk.appendChild(hd);
+        var bd = el("div", "row2 cpbody");
+        var fr = inp({ inputmode: "decimal", placeholder: "k lb" }); fr.value = c.fr;
+        var rq = inp({ inputmode: "decimal", placeholder: "k lb" }); rq.value = c.rq;
+        bd.appendChild(field("Fuel remaining (k lb)", fr));
+        bd.appendChild(field("Fuel required (k lb)", rq));
+        blk.appendChild(bd);
+        list.appendChild(blk);
+        marginTag(c, tag);
+
+        fr.addEventListener("input", function(){ c.fr = fr.value; marginTag(c, tag); persist(); });
+        rq.addEventListener("input", function(){ c.rq = rq.value; marginTag(c, tag); persist(); });
+
+        var armed = false, timer = null;
+        function disarm(){ armed = false; clearTimeout(timer); rm.textContent = "Remove"; rm.classList.remove("armed"); }
+        rm.addEventListener("click", function(){
+          if(!isEmptyCP(c) && !armed){
+            armed = true; rm.textContent = "Tap again to remove"; rm.classList.add("armed");
+            timer = setTimeout(disarm, 3000);
+            return;
+          }
+          clearTimeout(timer);
+          var idx = cps.indexOf(c);
+          if(cps.length === 1) cps[0] = { fr: "", rq: "" };
+          else cps.splice(idx, 1);
+          render(); persist();
+        });
+      });
+    }
+
+    enIn.value = en; exIn.value = ex;
+    enIn.addEventListener("input", function(){ en = enIn.value.toUpperCase(); enIn.value = en; persist(); });
+    exIn.addEventListener("input", function(){ ex = exIn.value.toUpperCase(); exIn.value = ex; persist(); });
+
+    addBtn.addEventListener("click", function(){
+      cps.push({ fr: "", rq: "" });
+      render(); persist();
+      var ins = list.querySelectorAll(".cpb");
+      var first = ins[ins.length - 1].querySelector("input");
+      if(first) first.focus();
+      ins[ins.length - 1].scrollIntoView({ block: "nearest" });
+    });
+    clr.addEventListener("click", function(){
+      en = ""; ex = ""; cps = [{ fr: "", rq: "" }];
+      enIn.value = ""; exIn.value = "";
+      render(); lsDel(FUEL_KEY); savedT = 0; setEdited(edited, 0); refreshStale();
+    });
+
+    render(); setEdited(edited, savedT);
+    viewPre.appendChild(C.wrap);
+  })();
+
+  // ═══════════ 3) TIME REMAINING ═══════════
+  (function(){
+    var C = mkCard("Time Remaining");
+    var land = inp({ inputmode: "numeric", maxlength: "4", placeholder: "HHMM" });
+    var cur  = inp({ inputmode: "numeric", maxlength: "4", placeholder: "HHMM" });
+    var row = el("div", "row2");
+    row.appendChild(field("Planned landing (UTC)", land));
+    row.appendChild(field("Current time (UTC)", cur));
+    C.body.appendChild(row);
+    var liveBtn = el("button", "btn big", "Use current UTC");
+    C.body.appendChild(liveBtn);
+    var out = tile("neu", "Time remaining");
+    C.body.appendChild(out);
+    var msg = el("div", "msg"); msg.hidden = true; C.body.appendChild(msg);
+    var note = el("div", "hint"); note.hidden = true; C.body.appendChild(note);
+
+    function parse(s){
+      if(!/^\d{4}$/.test(s)) return null;
+      var h = +s.slice(0, 2), m = +s.slice(2);
+      return (h <= 23 && m <= 59) ? h * 60 + m : null;
+    }
+    function compute(){
+      var a = land.value, b = cur.value, bad = [];
+      var L = parse(a), N = parse(b);
+      if(a && L === null) bad.push("Landing time");
+      if(b && N === null) bad.push("Current time");
+      msg.hidden = !bad.length;
+      if(bad.length) msg.textContent = bad.join(" and ") + ": enter 4 digits HHMM (hour 00-23, minute 00-59).";
+      note.hidden = true;
+      if(L === null || N === null){ out.v.textContent = "--"; return; }
+      var diff = L - N;
+      if(diff < 0){
+        diff += 1440;
+        note.textContent = "Landing time is earlier than the current time: assuming landing is after midnight UTC (+24 h).";
+        note.hidden = false;
+      }
+      out.v.textContent = Math.floor(diff / 60) + "+" + pad2(diff % 60);
+    }
+    function utcNow(){ var d = new Date(); return pad2(d.getUTCHours()) + pad2(d.getUTCMinutes()); }
+
+    var timer = null;
+    function tick(){
+      var v = utcNow();
+      if(v !== cur.value){ cur.value = v; compute(); }
+    }
+    function startLive(){
+      cur.value = utcNow(); compute();
+      liveBtn.textContent = "Stop live";
+      liveBtn.classList.add("on");
+      if(timer) clearInterval(timer);
+      timer = setInterval(tick, 10000);
+    }
+    function stopLive(){
+      if(timer){ clearInterval(timer); timer = null; }
+      liveBtn.textContent = "Use current UTC";
+      liveBtn.classList.remove("on");
+    }
+    function digits(i){ i.addEventListener("input", function(){ var v = i.value.replace(/\D/g, "").slice(0, 4); if(v !== i.value) i.value = v; }); }
+    digits(land); digits(cur);
+    land.addEventListener("input", compute);
+    cur.addEventListener("input", function(){ if(timer) stopLive(); compute(); });
+    cur.addEventListener("beforeinput", function(){ if(timer) stopLive(); });
+    cur.addEventListener("keydown", function(e){ if(timer && e.key !== "Tab" && e.key !== "Shift") stopLive(); });
+    liveBtn.addEventListener("click", function(){ if(timer) stopLive(); else startLive(); });
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden && timer) tick(); });
+    compute();
+    viewIn.appendChild(C.wrap);
+  })();
+
+  // ═══════════ 4) FMC EO SPD / ALT (emergency reference, no heading) ═══════════
+  (function(){
+    var C = mkCard(null);
+    var s = "", a = "", t = 0;
+    (function load(){
+      var o = lsJSON(EO_KEY);
+      if(o && typeof o === "object"){
+        if(o.s != null) s = String(o.s);
+        if(o.a != null) a = String(o.a);
+        if(typeof o.t === "number") t = o.t;
+      }
+    })();
+    var sIn = inp({ inputmode: "decimal", placeholder: "speed" });
+    var aIn = inp({ inputmode: "decimal", placeholder: "altitude" });
+    var row = el("div", "eorow");
+    var l1 = el("span", "eolab", "FMC EO SPD"), l2 = el("span", "eolab", "ALT");
+    row.appendChild(l1); row.appendChild(sIn); row.appendChild(l2); row.appendChild(aIn);
+    C.body.appendChild(row);
+    var tiles = el("div", "tiles");
+    var ts = tile("dng", "FMC EO SPD"), ta = tile("dng", "ALT");
+    tiles.appendChild(ts); tiles.appendChild(ta);
+    C.body.appendChild(tiles);
+    var edited = el("div", "edited"); C.body.appendChild(edited);
+    var clr = el("button", "dbtn", "Clear EO"); C.body.appendChild(clr);
+    addStale(C.warn, function(){ return t; }, "FMC EO values");
+
+    function show(){
+      ts.v.textContent = s.trim() || "--";
+      ta.v.textContent = a.trim() || "--";
+    }
+    function persist(){
+      if(!s.trim() && !a.trim()){ lsDel(EO_KEY); t = 0; }
+      else{ t = Date.now(); lsSet(EO_KEY, JSON.stringify({ s: s, a: a, t: t })); }
+      setEdited(edited, t); refreshStale();
+    }
+    sIn.value = s; aIn.value = a; show(); setEdited(edited, t);
+    sIn.addEventListener("input", function(){ s = sIn.value; show(); persist(); });
+    aIn.addEventListener("input", function(){ a = aIn.value; show(); persist(); });
+    clr.addEventListener("click", function(){
+      s = ""; a = ""; sIn.value = ""; aIn.value = ""; show();
+      lsDel(EO_KEY); t = 0; setEdited(edited, 0); refreshStale();
+    });
+    viewIn.appendChild(C.wrap);
+  })();
+
+  // ═══════════ 5) HF FREQUENCIES ═══════════
+  (function(){
+    var C = mkCard("HF Frequencies");
+    C.card.classList.add("hfcard");
+    var rows = [], t = 0;
+    for(var i = 0; i < 4; i++) rows.push({ p: "", s: "", w: "" });
+    (function load(){
+      var o = lsJSON(HF_KEY);
+      if(!o || typeof o !== "object") return;
+      if(Array.isArray(o.rows)){
+        for(var k = 0; k < 4; k++){
+          var r = o.rows[k];
+          if(r && typeof r === "object"){
+            rows[k] = { p: r.p == null ? "" : String(r.p), s: r.s == null ? "" : String(r.s), w: r.w == null ? "" : String(r.w) };
+          }
+        }
+      }
+      if(typeof o.t === "number") t = o.t;
+    })();
+
+    var edited = el("div", "edited");
+    var inputs = [];
+    rows.forEach(function(r, k){
+      var line = el("div", "hfrow");
+      line.appendChild(el("span", "hfn", String(k + 1)));
+      var p = inp({ inputmode: "numeric", placeholder: "Primary (kHz)", "aria-label": "HF " + (k + 1) + " primary kHz" });
+      var s = inp({ inputmode: "numeric", placeholder: "Secondary (kHz)", "aria-label": "HF " + (k + 1) + " secondary kHz" });
+      var sw = el("div", "hfsw");
+      sw.appendChild(el("span", "hfat", "@"));
+      var w = inp({ placeholder: "Switch-over (fix, longitude or time)", "aria-label": "HF " + (k + 1) + " switch-over point" });
+      sw.appendChild(w);
+      p.value = r.p; s.value = r.s; w.value = r.w;
+      line.appendChild(p); line.appendChild(s); line.appendChild(sw);
+      C.body.appendChild(line);
+      inputs.push([p, s, w]);
+      p.addEventListener("input", function(){ r.p = p.value; persist(); });
+      s.addEventListener("input", function(){ r.s = s.value; persist(); });
+      w.addEventListener("input", function(){ r.w = w.value; persist(); });
+    });
+    C.body.appendChild(edited);
+    var clr = el("button", "dbtn", "Clear all HF"); C.body.appendChild(clr);
+    C.body.appendChild(el("div", "hint", "Saved on this device. Clear between flights."));
+    addStale(C.warn, function(){ return t; }, "HF frequencies");
+
+    function persist(){
+      var empty = rows.every(function(r){ return !r.p.trim() && !r.s.trim() && !r.w.trim(); });
+      if(empty){ lsDel(HF_KEY); t = 0; }
+      else{ t = Date.now(); lsSet(HF_KEY, JSON.stringify({ rows: rows, t: t })); }
+      setEdited(edited, t); refreshStale();
+    }
+    clr.addEventListener("click", function(){
+      rows.forEach(function(r, k){
+        r.p = r.s = r.w = "";
+        inputs[k][0].value = ""; inputs[k][1].value = ""; inputs[k][2].value = "";
+      });
+      lsDel(HF_KEY); t = 0; setEdited(edited, 0); refreshStale();
+    });
+    setEdited(edited, t);
+    viewIn.appendChild(C.wrap);
+  })();
+
+  // ═══════════ NAVIGATION ═══════════
+  var views = { orca: $("view-orca"), pre: viewPre, "in": viewIn };
+  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), "in": $("nav-in") };
+  var foot = $("foot"), ref = $("ref");
+  var footOrca = foot.textContent;
+  var footNew = "Reference aid only. The Flight Manual and OFP govern.";
+  var REF = { pre: "ORCA · PREFLIGHT", "in": "ORCA · INFLIGHT" };
+
+  function showView(v, persist){
+    Object.keys(views).forEach(function(k){
+      views[k].hidden = (k !== v);
+      btns[k].setAttribute("aria-selected", k === v ? "true" : "false");
+    });
+    $("orcatools").hidden = (v !== "orca");
+    foot.textContent = (v === "orca") ? footOrca : footNew;
+    if(v === "orca"){ window.dispatchEvent(new Event("orcashown")); }
+    else{ ref.textContent = REF[v]; refreshStale(); }
+    if(persist) lsSet(NAV_KEY, v);
+  }
+  Object.keys(btns).forEach(function(k){
+    btns[k].addEventListener("click", function(){ showView(k, true); });
+  });
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) refreshStale(); });
+
+  var start = lsGet(NAV_KEY);
+  if(!views[start]) start = "pre";
+  showView(start, false);
 })();
 </script>
 </body>
