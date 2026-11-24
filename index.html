@@ -203,6 +203,7 @@
   .in:focus{outline:2px solid var(--blue);outline-offset:0}
   select.in{padding-right:30px;background-repeat:no-repeat;background-position:right 10px center;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%236b7f96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>")}
+  .wrap[hidden],.flt[hidden]{display:none}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
   .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .tile{border-radius:6px;padding:10px 12px;border:1px solid var(--border2);background:var(--head);min-width:0}
@@ -274,6 +275,7 @@
     <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA</button>
     <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight</button>
     <button class="tab" role="tab" id="nav-fuel" aria-selected="false">Fuel</button>
+    <button class="tab" role="tab" id="nav-new" aria-selected="false">ETOPS</button>
   </div>
   <div class="orcatools" id="orcatools">
     <div class="tabs" role="tablist">
@@ -296,6 +298,7 @@
 <div class="view" id="view-pre" hidden></div>
 <div class="view" id="view-in" hidden></div>
 <div class="view" id="view-fuel" hidden></div>
+<div class="view" id="view-new" hidden></div>
 
 <footer id="foot">Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
 
@@ -854,16 +857,181 @@
     return t;
   }
 
-  var viewPre = $("view-pre"), viewIn = $("view-in"), viewFuel = $("view-fuel");
+  var viewPre = $("view-pre"), viewIn = $("view-in"), viewFuel = $("view-fuel"), viewNew = $("view-new");
+  // Removed from Preflight but kept in code (never shown): ETOPS AOA and ETOPS critical fuel.
+  var viewHold = document.createElement("div");
+  var flt = $("flt");
 
   // ───────── standalone note ─────────
   var standalone = (window.navigator.standalone === true) ||
                    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-  [viewPre, viewIn, viewFuel].forEach(function(v){
+  [viewPre, viewIn, viewFuel, viewNew].forEach(function(v){
     if(!standalone){
       v.appendChild(el("div", "pnote full", "To keep saved entries reliably, install this app: Share, then Add to Home Screen."));
     }
   });
+
+  // ═══════════ 0) FLIGHT + FMS DATA ═══════════
+  var flightRef = { dep: "", arr: "", block: "", on: [] };
+  (function(){
+    var RT_KEY = "orca_route", FMS_KEY = "orca_fms";
+    var r = { dep: "", arr: "", out: "", off: "", on: "", inn: "" }, rt = 0;
+    var f = { zfw: "", rsv: "", crz: "", ci: "", df: "", dist: "", time: "" }, ft = 0, open = false;
+    (function load(){
+      var o = lsJSON(RT_KEY);
+      if(o && typeof o === "object"){ Object.keys(r).forEach(function(k){ if(o[k] != null) r[k] = String(o[k]); }); if(typeof o.t === "number") rt = o.t; }
+      var p = lsJSON(FMS_KEY);
+      if(p && typeof p === "object"){ Object.keys(f).forEach(function(k){ if(p[k] != null) f[k] = String(p[k]); }); if(typeof p.t === "number") ft = p.t; open = p.open === true; }
+    })();
+
+    function mins(s){
+      var m = /^(\d{2})(\d{2})$/.exec(s.trim());
+      if(!m || +m[1] > 23 || +m[2] > 59) return null;
+      return +m[1] * 60 + +m[2];
+    }
+    function span(a, b){
+      var x = mins(a), y = mins(b);
+      if(x === null || y === null) return null;
+      return (y - x + 1440) % 1440;
+    }
+    function hm(n){ return n === null ? "--" : Math.floor(n / 60) + ":" + pad2(n % 60); }
+
+    // ── flight card ──
+    var C = mkCard("Flight");
+    var fltIn = inp({ maxlength: "12", autocapitalize: "characters", "aria-label": "Flight number", placeholder: "UA 123" });
+    var depIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Departure", placeholder: "KDEN" });
+    var arrIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Arrival", placeholder: "KLAX" });
+    var tIn = {};
+    var TL = [["out", "OUT (Z)"], ["off", "OFF (Z)"], ["on", "ON (Z)"], ["inn", "IN (Z)"]];
+    TL.forEach(function(x){
+      tIn[x[0]] = inp({ inputmode: "numeric", maxlength: "4", placeholder: "hhmm", "aria-label": x[1] });
+    });
+    depIn.value = r.dep; arrIn.value = r.arr;
+    TL.forEach(function(x){ tIn[x[0]].value = r[x[0]]; });
+    fltIn.value = flt.value;
+
+    C.body.appendChild(field("Flight number", fltIn));
+    var rowA = el("div", "row2"); rowA.appendChild(field("DEP", depIn)); rowA.appendChild(field("ARR", arrIn));
+    C.body.appendChild(rowA);
+    var rowB = el("div", "row2"); rowB.appendChild(field(TL[0][1], tIn.out)); rowB.appendChild(field(TL[1][1], tIn.off));
+    C.body.appendChild(rowB);
+    var rowC = el("div", "row2"); rowC.appendChild(field(TL[2][1], tIn.on)); rowC.appendChild(field(TL[3][1], tIn.inn));
+    C.body.appendChild(rowC);
+    var DI = inp({ inputmode: "numeric", placeholder: "nm", maxlength: "5", "aria-label": "Distance, nm" });
+    var TM = inp({ placeholder: "H:MM", maxlength: "6", "aria-label": "Flight time" });
+    DI.value = f.dist; TM.value = f.time;
+        function mkRoute(){
+      var t = tile("neu", "Route");
+      t.sub = el("div", "hint"); t.appendChild(t.sub);
+      return t;
+    }
+    var routeTop = mkRoute(); C.body.appendChild(routeTop);
+    var tiles = el("div", "tiles");
+    var tBlock = tile("acc", "Block time (OUT to IN)"), tAir = tile("neu", "Air time (OFF to ON)");
+    tiles.appendChild(tBlock); tiles.appendChild(tAir);
+    C.body.appendChild(tiles);
+    var edited = el("div", "edited"); C.body.appendChild(edited);
+    var fmsBtn = el("button", "btn big", "FMS DATA"); fmsBtn.setAttribute("aria-expanded", "false");
+    var clr = el("button", "btn big", "Clear flight times");
+    var brow = el("div", "row2"); brow.appendChild(fmsBtn); brow.appendChild(clr);
+    C.body.appendChild(brow);
+    C.body.appendChild(el("div", "hint", "Times are UTC, 4 digits (1435 for 1435Z). Block and air time handle crossing midnight. The flight number also shows in the INFO box in the header on the other pages."));
+    addStale(C.warn, function(){ return rt; }, "flight times");
+    viewPre.appendChild(C.wrap);
+
+    // ── FMS data card ──
+    var F = mkCard("FMS Data");
+    var apSaved = lsJSON(AOA_KEY) || {};
+    var apId = FM.airplanes.some(function(a){ return a.id === apSaved.ap; }) ? apSaved.ap : FM.defaultAirplane;
+    var apSel = sel(FM.airplanes.map(function(a){ return [a.id, a.name]; }), apId);
+    apSel.setAttribute("aria-label", "Aircraft type");
+    F.body.appendChild(field("AIRCRAFT TYPE (used for the ETOPS rings)", apSel));
+    apSel.addEventListener("change", function(){
+      var o = lsJSON(AOA_KEY) || {};
+      o.ap = apSel.value;
+      lsSet(AOA_KEY, JSON.stringify(o));
+    });
+    var ZF = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "ZFW, k lb" });
+    var RS = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "Reserves, k lb" });
+    var CZ = inp({ placeholder: "FL350", maxlength: "6", autocapitalize: "characters", "aria-label": "Cruise altitude" });
+    var CI = inp({ inputmode: "numeric", placeholder: "CI", maxlength: "4", "aria-label": "Cost index" });
+    var DF = inp({ placeholder: "+0.0/+0.0", maxlength: "12", "aria-label": "Drag and fuel flow factors" });
+    var map = { zfw: ZF, rsv: RS, crz: CZ, ci: CI, df: DF, dist: DI, time: TM };
+    Object.keys(map).forEach(function(k){ map[k].value = f[k]; });
+    var rows = [[["ZFW (k lb)", ZF], ["RSV (k lb)", RS]], [["CRZ ALT", CZ], ["CI", CI]], [["D/F (DRAG / FUEL FLOW)", DF], ["DIST (nm)", DI]], [["TIME (from flight plan)", TM]]];
+    rows.forEach(function(rw){
+      var d = el("div", "row2"); rw.forEach(function(x){ d.appendChild(field(x[0], x[1])); }); F.body.appendChild(d);
+    });
+    var fEdited = el("div", "edited"); F.body.appendChild(fEdited);
+    var fClr = el("button", "btn big", "Clear FMS data"); F.body.appendChild(fClr);
+    F.body.appendChild(el("div", "hint", "Reference for programming the FMS. Fuel in thousands of pounds. The OFP and dispatch release govern."));
+    addStale(F.warn, function(){ return ft; }, "FMS entries");
+    F.wrap.hidden = !open;
+    viewPre.appendChild(F.wrap);
+
+    function render(){
+      var blk = span(r.out, r.inn), air = span(r.off, r.on);
+      tBlock.v.textContent = hm(blk); tAir.v.textContent = hm(air);
+      var fm = span(r.out, r.on);
+      flightRef.block = fm === null ? "" : hm(fm);
+      var rtxt = (r.dep || "----") + " → " + (r.arr || "----");
+      var typed = f.time.trim().replace(/^(\d{1,2})(\d{2})$/, "$1:$2");
+      var tm = typed || "--";
+      var sub = "DIST " + (f.dist.trim() ? f.dist.trim() + " nm" : "--") + "   TIME " + tm;
+      routeTop.v.textContent = rtxt; routeTop.sub.textContent = sub;
+      
+      fmsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      fmsBtn.textContent = open ? "FMS DATA ▲" : "FMS DATA ▼";
+      F.wrap.hidden = !open;
+    }
+    function saveRoute(){
+      var any = Object.keys(r).some(function(k){ return r[k].trim(); });
+      if(!any){ lsDel(RT_KEY); rt = 0; }
+      else{ rt = Date.now(); lsSet(RT_KEY, JSON.stringify({ dep: r.dep, arr: r.arr, out: r.out, off: r.off, on: r.on, inn: r.inn, t: rt })); }
+      setEdited(edited, rt); refreshStale(); render();
+    }
+    function saveFms(){
+      var any = Object.keys(f).some(function(k){ return f[k].trim(); });
+      if(!any) ft = 0; else ft = Date.now();
+      if(!any && !open) lsDel(FMS_KEY);
+      else lsSet(FMS_KEY, JSON.stringify({ zfw: f.zfw, rsv: f.rsv, crz: f.crz, ci: f.ci, df: f.df, dist: f.dist, time: f.time, open: open, t: ft }));
+      setEdited(fEdited, ft); refreshStale(); render();
+    }
+    fltIn.addEventListener("input", function(){
+      flt.value = fltIn.value; flt.dispatchEvent(new Event("input"));
+    });
+    window.addEventListener("fltsync", function(){ fltIn.value = flt.value; });
+    [["dep", depIn], ["arr", arrIn]].forEach(function(x){
+      x[1].addEventListener("input", function(){ x[1].value = x[1].value.toUpperCase(); r[x[0]] = x[1].value; saveRoute(); });
+    });
+    TL.forEach(function(x){
+      var i = tIn[x[0]];
+      i.addEventListener("input", function(){ i.value = i.value.replace(/\D/g, "").slice(0, 4); r[x[0]] = i.value; saveRoute(); });
+    });
+    Object.keys(map).forEach(function(k){
+      map[k].addEventListener("input", function(){
+        if(k === "crz") map[k].value = map[k].value.toUpperCase();
+        f[k] = map[k].value; saveFms();
+      });
+    });
+    fmsBtn.addEventListener("click", function(){ open = !open; saveFms(); render(); });
+    clr.addEventListener("click", function(){
+      ["out", "off", "on", "inn"].forEach(function(k){ r[k] = ""; tIn[k].value = ""; });
+      saveRoute();
+    });
+    fClr.addEventListener("click", function(){
+      Object.keys(f).forEach(function(k){ f[k] = ""; map[k].value = ""; });
+      saveFms();
+    });
+    resetters.push(function(){
+      r.dep = r.arr = ""; depIn.value = arrIn.value = "";
+      ["out", "off", "on", "inn"].forEach(function(k){ r[k] = ""; tIn[k].value = ""; });
+      Object.keys(f).forEach(function(k){ f[k] = ""; map[k].value = ""; });
+      open = false; lsDel(RT_KEY); lsDel(FMS_KEY); rt = 0; ft = 0;
+      setEdited(edited, 0); setEdited(fEdited, 0); render(); refreshStale();
+    });
+    setEdited(edited, rt); setEdited(fEdited, ft); render();
+  })();
 
   // ═══════════ 1) AIRPLANE + ETOPS AOA (from FM data block) ═══════════
   (function(){
@@ -872,7 +1040,7 @@
     var ok = FM.airplanes.every(function(a){ return a.m290.length === n && a.m310.length === n; });
     if(!ok){
       C.body.appendChild(el("div", "msg", "FM data block error: check array lengths."));
-      viewPre.appendChild(C.wrap);
+      viewHold.appendChild(C.wrap);
       return;
     }
 
@@ -917,7 +1085,7 @@
     spSel.addEventListener("change", function(){ spId = spSel.value; render(); persist(); });
     rtSel.addEventListener("change", function(){ rt = +rtSel.value; render(); persist(); });
     render();
-    viewPre.appendChild(C.wrap);
+    viewHold.appendChild(C.wrap);
   })();
 
   // ═══════════ 2) ETOPS CRITICAL FUEL (typed per flight) ═══════════
@@ -1044,7 +1212,7 @@
     });
 
     render(); setEdited(edited, savedT);
-    viewPre.appendChild(C.wrap);
+    viewHold.appendChild(C.wrap);
   })();
 
   // ═══════════ 3) TIME REMAINING ═══════════
@@ -1347,12 +1515,12 @@
   })();
 
   // ═══════════ NAVIGATION ═══════════
-  var views = { orca: $("view-orca"), pre: viewPre, "in": viewIn, fuel: viewFuel };
-  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), "in": $("nav-in"), fuel: $("nav-fuel") };
+  var views = { orca: $("view-orca"), pre: viewPre, "in": viewIn, fuel: viewFuel, "new": viewNew };
+  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), "in": $("nav-in"), fuel: $("nav-fuel"), "new": $("nav-new") };
   var foot = $("foot"), ref = $("ref");
   var footOrca = foot.textContent;
   var footNew = "Reference aid only. The Flight Manual and OFP govern.";
-  var REF = { pre: "ORCA · PREFLIGHT", "in": "ORCA · INFLIGHT", fuel: "FUEL" };
+  var REF = { pre: "ORCA · PREFLIGHT", "in": "ORCA · INFLIGHT", fuel: "FUEL", "new": "ETOPS" };
 
   function showView(v, persist){
     Object.keys(views).forEach(function(k){
@@ -1360,6 +1528,7 @@
       btns[k].setAttribute("aria-selected", k === v ? "true" : "false");
     });
     $("orcatools").hidden = (v !== "orca");
+    flt.parentNode.hidden = (v === "pre");
     foot.textContent = (v === "orca") ? footOrca : footNew;
     if(v === "orca"){ window.dispatchEvent(new Event("orcashown")); }
     else{ ref.textContent = REF[v]; refreshStale(); }
@@ -1371,23 +1540,27 @@
   document.addEventListener("visibilitychange", function(){ if(!document.hidden) refreshStale(); });
 
   // Flight number: one field in the header, shared by every view, saved on the device.
-  var FLT_KEY = "orca_flt", flt = $("flt");
+  var FLT_KEY = "orca_flt";
   flt.value = lsGet(FLT_KEY) || "";
   flt.addEventListener("input", function(){
     flt.value = flt.value.toUpperCase();
     if(flt.value.trim()) lsSet(FLT_KEY, flt.value); else lsDel(FLT_KEY);
+    window.dispatchEvent(new Event("fltsync"));
   });
+  window.dispatchEvent(new Event("fltsync"));
 
-  resetters.push(function(){ flt.value = ""; lsDel(FLT_KEY); });
+  resetters.push(function(){ flt.value = ""; lsDel(FLT_KEY); window.dispatchEvent(new Event("fltsync")); });
 
   // Global Reset All: new flight. Clears ORCA checks, flight number, critical fuel,
   // FMC EO values, HF frequencies and the time fields. Airplane / ETOPS selections stay.
   $("resetAll").addEventListener("click", function(){
-    if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel and time fields.\n\nAirplane and ETOPS selections are kept.")) return;
+    if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, route and times, FMS data, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel and time fields.\n\nAirplane and ETOPS selections are kept.")) return;
     if(window.orcaResetChecks) window.orcaResetChecks();
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
     refreshStale();
   });
+
+  viewNew.appendChild(el("div", "hint", "Nothing here yet."));
 
   var start = lsGet(NAV_KEY);
   if(!views[start]) start = "pre";
