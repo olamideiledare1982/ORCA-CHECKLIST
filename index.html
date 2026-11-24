@@ -1231,11 +1231,14 @@
     return /^(\d+(\.\d*)?|\.\d+)$/.test(x) ? parseFloat(x) : null;
   }
 
+  // Ladder values are shared so Bingo can default to the ladder ALT and REMF.
+  var ladderRef = { v: ["", "", "", "", ""], on: [] };
+
   // Fuel ladder: five values typed from the flight plan, no math.
   (function(){
     var C = mkCard("Fuel Ladder");
     var LAB = ["PLAN GATE", "MIN TO", "ALT", "RSV", "REMF"];
-    var vals = ["", "", "", "", ""], t = 0;
+    var vals = ladderRef.v, t = 0;
     (function load(){
       var o = lsJSON(LADDER_KEY);
       if(o && typeof o === "object"){
@@ -1261,11 +1264,11 @@
     function persist(){
       if(vals.every(function(v){ return !v.trim(); })){ lsDel(LADDER_KEY); t = 0; }
       else{ t = Date.now(); lsSet(LADDER_KEY, JSON.stringify({ v: vals, t: t })); }
-      setEdited(edited, t); refreshStale();
+      setEdited(edited, t); refreshStale(); ladderRef.on.forEach(function(fn){ fn(); });
     }
     clr.addEventListener("click", function(){
       for(var i = 0; i < 5; i++){ vals[i] = ""; ins[i].value = ""; }
-      lsDel(LADDER_KEY); t = 0; setEdited(edited, 0); refreshStale();
+      lsDel(LADDER_KEY); t = 0; setEdited(edited, 0); refreshStale(); ladderRef.on.forEach(function(fn){ fn(); });
     });
     setEdited(edited, t);
     viewFuel.appendChild(C.wrap);
@@ -1275,9 +1278,9 @@
   // FOM 4.40.15: Bingo = (FOB - predicted fuel at destination) + fuel to ALT + REMF (not less than FAR 00:45)
   (function(){
     var C = mkCard("Bingo Fuel");
-    var KEYS = ["fob", "dst", "alt", "min"];
-    var LABELS = ["Fuel on board now (k lb)", "Predicted fuel at destination (k lb)", "Fuel to ALT, ALTN line (k lb)", "REMF, FAR 00:45 or more (k lb)"];
-    var d = { fob: "", dst: "", alt: "", min: "" }, t = 0;
+    var KEYS = ["fob", "dst", "alt", "min", "rate"];
+    var LABELS = ["Fuel on board now (k lb)", "Predicted fuel at destination (k lb)", "Fuel to ALT, ALTN line (k lb)", "REMF, FAR 00:45 or more (k lb)", "Hold burn (k lb per hr)"];
+    var d = { fob: "", dst: "", alt: "", min: "", rate: "" }, t = 0;
     (function load(){
       var o = lsJSON(BINGO_KEY);
       if(o && typeof o === "object"){
@@ -1287,37 +1290,57 @@
     })();
     var ins = {};
     var grid = el("div", "cplist");
-    for(var r = 0; r < 2; r++){
+    for(var r = 0; r < 3; r++){
       var row = el("div", "row2");
-      for(var c = 0; c < 2; c++){
+      for(var c = 0; c < 2 && r * 2 + c < KEYS.length; c++){
         var k = KEYS[r * 2 + c];
-        var f = inp({ inputmode: "decimal", placeholder: "k lb" });
+        var f = inp({ inputmode: "decimal", placeholder: k === "rate" ? "k lb/hr" : "k lb" });
         f.value = d[k]; ins[k] = f;
         row.appendChild(field(LABELS[r * 2 + c], f));
       }
       grid.appendChild(row);
     }
     C.body.appendChild(grid);
-    var out = tile("neu", "Bingo fuel");
+    var out = tile("neg", "Bingo fuel");
     C.body.appendChild(out);
-    C.body.appendChild(el("div", "hint", "Bingo = (FOB \u2212 fuel at destination) + fuel to ALT + REMF. Fuel at destination from FMC/HOWGOZIT/OFP. Fuel to ALT is the ALTN line of the OFP fuel ladder. REMF is not less than FAR 00:45 (international: FAR 30 \u00d7 1.5). Fuel is in thousands of pounds: type 8.3 for 8,300 lb. FOM 4.40.15."));
+    var endu = tile("neu", "Hold time to bingo (est.)");
+    C.body.appendChild(endu);
+    C.body.appendChild(el("div", "hint", "Bingo = (FOB \u2212 fuel at destination) + fuel to ALT + REMF. Fuel at destination from FMC/HOWGOZIT/OFP. Fuel to ALT is the ALTN line of the OFP fuel ladder. REMF is not less than FAR 00:45 (international: FAR 30 \u00d7 1.5). ALT and REMF default to the Fuel Ladder values when left blank. Hold time = (FOB \u2212 bingo) \u00f7 hold burn, an estimate that assumes bingo stays fixed. Fuel is in thousands of pounds: type 8.3 for 8,300 lb. FOM 4.40.15."));
     var edited = el("div", "edited"); C.body.appendChild(edited);
     var clr = el("button", "dbtn", "Clear bingo"); C.body.appendChild(clr);
     addStale(C.warn, function(){ return t; }, "bingo fuel entries");
     resetters.push(function(){ clr.click(); });
 
+    function eff(k){
+      var own = kNum(d[k]);
+      if(own !== null || d[k].trim()) return own;
+      var lv = k === "alt" ? ladderRef.v[2] : k === "min" ? ladderRef.v[4] : "";
+      return kNum(lv);
+    }
     function show(){
-      var n = KEYS.map(function(k){ return kNum(d[k]); });
-      out.v.className = "tv";
-      if(n.some(function(x){ return x === null; })){ out.v.textContent = "--"; return; }
+      ["alt", "min"].forEach(function(k){
+        var lv = k === "alt" ? ladderRef.v[2] : ladderRef.v[4];
+        ins[k].placeholder = kNum(lv) !== null ? lv + " (ladder)" : "k lb";
+      });
+      out.v.className = "tv neg"; endu.v.className = "tv";
+      var n = ["fob", "dst", "alt", "min"].map(eff);
+      if(n.some(function(x){ return x === null; })){ out.v.textContent = "--"; endu.v.textContent = "--"; return; }
       var b = Math.round(((n[0] - n[1]) + n[2] + n[3]) * 10) / 10;
       out.v.textContent = b.toFixed(1) + "k lb";
+      var rate = kNum(d.rate);
+      if(rate === null || rate <= 0){ endu.v.textContent = "--"; return; }
+      var room = n[0] - b;
+      if(room <= 0){ endu.v.textContent = "AT BINGO"; endu.v.classList.add("neg"); return; }
+      var mins = Math.round(room / rate * 60);
+      endu.v.textContent = mins + " min";
+      endu.v.classList.add(mins < 10 ? "neg" : "pos");
     }
+    ladderRef.on.push(show);
     function persist(){
       if(KEYS.every(function(k){ return !d[k].trim(); })){ lsDel(BINGO_KEY); t = 0; }
       else{
         t = Date.now();
-        lsSet(BINGO_KEY, JSON.stringify({ fob: d.fob, dst: d.dst, alt: d.alt, min: d.min, t: t }));
+        lsSet(BINGO_KEY, JSON.stringify({ fob: d.fob, dst: d.dst, alt: d.alt, min: d.min, rate: d.rate, t: t }));
       }
       setEdited(edited, t); refreshStale();
     }
