@@ -246,6 +246,13 @@
     .hfsw{display:contents}
   }
   .view .card{overflow:visible}
+  .flt{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
+  .flt+.pill{margin-left:0}
+  .flt span{font:700 10px var(--mono);letter-spacing:.08em;color:var(--dim)}
+  .flt input{width:104px;min-height:34px;background:var(--bg);color:#fff;border:1px solid var(--border2);border-radius:6px;
+    padding:4px 8px;font:700 15px var(--mono);letter-spacing:.06em;text-transform:uppercase;-webkit-user-select:text;user-select:text;-webkit-appearance:none;appearance:none}
+  .flt input::placeholder{color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0}
+  .flt input:focus{outline:2px solid var(--blue)}
 </style>
 </head>
 <body>
@@ -270,6 +277,7 @@
       <button class="btn" id="resetAll">Reset All</button>
     </div>
   </div>
+  <label class="flt"><span>FLT</span><input id="flt" type="text" maxlength="8" placeholder="Flight #" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight number"></label>
   <div class="pill wait" id="status" role="status">CHECKING…</div>
 </div>
 
@@ -1227,6 +1235,14 @@
     btns[k].addEventListener("click", function(){ showView(k, true); });
   });
   document.addEventListener("visibilitychange", function(){ if(!document.hidden) refreshStale(); });
+
+  // Flight number: one field in the header, shared by every view, saved on the device.
+  var FLT_KEY = "orca_flt", flt = $("flt");
+  flt.value = lsGet(FLT_KEY) || "";
+  flt.addEventListener("input", function(){
+    flt.value = flt.value.toUpperCase();
+    if(flt.value.trim()) lsSet(FLT_KEY, flt.value); else lsDel(FLT_KEY);
+  });
 
   var start = lsGet(NAV_KEY);
   if(!views[start]) start = "pre";
