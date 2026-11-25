@@ -922,7 +922,7 @@
   var ofpBar = el("div", "ofpbar full");
   var ofpTx = el("div", "ofptx");
   ofpTx.appendChild(el("div", "ofpt", "Load the flight plan"));
-  var ofpSt = el("div", "ofps", "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times and FMS data fill in below; you can type over any field.");
+  var ofpSt = el("div", "ofps", "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in; FMS data you type yourself as a cross-check.");
   ofpTx.appendChild(ofpSt);
   var ofpBtn = el("button", "btn big", "Choose PDF");
   var ofpFile = document.createElement("input"); ofpFile.type = "file"; ofpFile.accept = "application/pdf,.pdf,application/octet-stream"; ofpFile.className = "ofpfile";
@@ -957,8 +957,27 @@
       zfw: fm.weights && fm.weights.ZFW && fm.weights.ZFW.planned ? (fm.weights.ZFW.planned / 1000).toFixed(1) : "",
       crz: fm.cruiseFL ? "FL" + fm.cruiseFL : "", ci: rt.ci, df: rt.perf, dist: rt.dist, time: tm
     });
-    ofpSt.className = d.checks && d.checks[0] !== d.checks[1] ? "ofps err" : "ofps ok";
-    ofpSt.textContent = fno + " " + (h.dep ? h.dep.icao : "") + " to " + (h.arr ? h.arr.icao : "") + " loaded" + chk + ". Fields filled; RSV is left for you to enter.";
+    // Fuel page: ladder (PLAN GATE, MIN TO, ALT, RSV=FAR, REMF) and Bingo's destination fuel. FOB stays yours to enter.
+    var lad = d.ladder || [], kl = function(x){ return x == null ? "" : (x / 1000).toFixed(1); };
+    var altL = lad.filter(function(l, i){ return i > 0 && /^[A-Z]{4}\/[A-Z]{3}$/.test(l.label); })[0];
+    function lf(label){ var r = lad.filter(function(l){ return l.label === label; })[0]; return r ? kl(r.fuel) : ""; }
+    var farL = lad.filter(function(l){ return l.label === "FAR"; })[0];
+    window.ofpApplyLadder([lf("PLAN GATE"), lf("MIN T/O"), altL ? kl(altL.fuel) : "", farL ? kl(farL.fuel) : "", lf("REMF")]);
+    // Bingo is an on-demand calculator: it is never filled from the OFP.
+    window.ofpApplyEtops(d.etops);
+    var etn = d.etops && ((d.etops.cps && d.etops.cps.length) || (d.etops.windows && d.etops.windows.length));
+    // Date check: the OFP date is local; allow yesterday and tomorrow for time zones.
+    var MON = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    var dm = /^(\d{2})([A-Z]{3})(\d{2})$/.exec(String(h.dateLocal || "")), old = "";
+    if(dm){
+      var od = new Date(2000 + +dm[3], MON.indexOf(dm[2]), +dm[1]), now = new Date();
+      var diff = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - od) / 86400000);
+      if(Math.abs(diff) > 1) old = " WARNING: this OFP is dated " + h.dateLocal + ", which is not today. Check you loaded the right plan.";
+    }
+    var bad = d.checks && d.checks[0] !== d.checks[1];
+    ofpSt.className = (bad || old) ? "ofps err" : "ofps ok";
+    ofpSt.textContent = fno + " " + (h.dep ? h.dep.icao : "") + " to " + (h.arr ? h.arr.icao : "") + " loaded" + chk +
+      ". Filled: flight, times, fuel ladder (RSV is the FAR line)" + (etn ? ", ETOPS airports and critical points" : "") + ". FMS data is left for you to type as a cross-check." + old;
   });
   (function(){
     var RT_KEY = "orca_route", FMS_KEY = "orca_fms";
@@ -1124,8 +1143,7 @@
       put(fltIn, d.flight); put(depIn, d.dep); put(arrIn, d.arr);
       put(tIn.out, d.out); put(tIn.off, d.off); put(tIn.on, d.on); put(tIn.inn, d.inn);
       if(d.ap && FM.airplanes.some(function(a){ return a.id === d.ap; })){ apSel.value = d.ap; apSel.dispatchEvent(new Event("change")); }
-      put(ZF, d.zfw); put(CZ, d.crz); put(CI, d.ci); put(DF, d.df); put(DI, d.dist); put(TM, d.time);
-      open = true; saveFms();
+      // FMS data is never filled from the OFP: typing it is the pilot's own cross-check against the plan.
     };
     setEdited(edited, rt); setEdited(fEdited, ft); render();
   })();
@@ -1466,6 +1484,22 @@
       renderAlts(); render(); lsDel(FUEL_KEY); savedT = 0; setEdited(edited, 0); refreshStale();
     });
 
+    // Fill from a parsed OFP (null = this flight has no ETOPS section: reset the page).
+    window.ofpApplyEtops = function(d){
+      function icao(x){ return String(x || "").split("/")[0].toUpperCase(); }
+      function k(v){ return v == null ? "" : (v / 1000).toFixed(1); }
+      if(!d || !(d.windows && d.windows.length) && !(d.cps && d.cps.length)){ clr.click(); return; }
+      en = icao(d.entryAirport); ex = icao(d.exitAirport);
+      enIn.value = en; exIn.value = ex;
+      alts = (d.windows || []).map(function(w){ return { ic: icao(w.apt), from: String(w.from || ""), to: String(w.to || "") }; });
+      while(alts.length < 2) alts.push({ ic: "", from: "", to: "" });
+      cps = (d.cps || []).map(function(c){
+        return { a1: icao(c.alts && c.alts[0]), a2: icao(c.alts && c.alts[1]), lat: c.latStr || "", lon: c.lonStr || "", fr: k(c.fuelRem), rq: k(c.fuelReq) };
+      });
+      if(!cps.length) cps = [newCP()];
+      renderAlts(); render(); persist();
+    };
+
     renderAlts(); render(); setEdited(edited, savedT);
     etpFuel.appendChild(CA.wrap);
     etpFuel.appendChild(CP.wrap);
@@ -1694,6 +1728,10 @@
       for(var i = 0; i < 5; i++){ vals[i] = ""; ins[i].value = ""; }
       lsDel(LADDER_KEY); t = 0; setEdited(edited, 0); refreshStale(); ladderRef.on.forEach(function(fn){ fn(); });
     });
+    window.ofpApplyLadder = function(v){
+      for(var i = 0; i < 5; i++){ vals[i] = v[i] || ""; ins[i].value = vals[i]; }
+      persist();
+    };
     setEdited(edited, t);
     viewFuel.appendChild(C.wrap);
   })();
@@ -1766,6 +1804,11 @@
       KEYS.forEach(function(k){ d[k] = ""; ins[k].value = ""; });
       show(); lsDel(BINGO_KEY); t = 0; setEdited(edited, 0); refreshStale();
     });
+    window.ofpApplyBingo = function(dst){
+      d.fob = ""; ins.fob.value = ""; d.alt = ""; ins.alt.value = ""; d.min = ""; ins.min.value = "";
+      d.dst = dst || ""; ins.dst.value = d.dst;
+      show(); persist();
+    };
     show(); setEdited(edited, t);
     viewFuel.appendChild(C.wrap);
   })();
@@ -1844,9 +1887,11 @@
   newFlt.appendChild(resetBtn);
   viewPre.appendChild(newFlt);
   resetBtn.addEventListener("click", function(){
-    if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, route and times, FMS data, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel and time fields.\n\nAirplane and ETOPS selections are kept.")) return;
+    if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, route and times, FMS data, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel, time fields and the loaded Nav Log with its ATA and fuel entries.\n\nAirplane and ETOPS selections are kept.")) return;
     if(window.orcaResetChecks) window.orcaResetChecks();
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
+    try{ if(navIf.contentWindow) navIf.contentWindow.postMessage({ navlogReset: true }, location.origin); }catch(e){}
+    ofpSt.className = "ofps"; ofpSt.textContent = "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in. FMS data you type yourself.";
     refreshStale();
   });
 

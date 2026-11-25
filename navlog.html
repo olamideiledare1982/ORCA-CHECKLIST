@@ -110,6 +110,8 @@ input.t4{font-family:var(--mono);text-align:center;letter-spacing:.04em;padding:
 .awy{font-family:var(--mono);font-size:12.5px;color:var(--accent);font-weight:600}
 .pos{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.01em}
 .wp.pseudo{background:var(--panel2);min-height:44px}
+.susp{font-size:11.5px;line-height:1.3;color:var(--warn);margin-top:3px}
+.wp:has(.susp){box-shadow:inset 3px 0 0 var(--warn)}
 .wp.pseudo .nm{font-size:14px;color:var(--muted)}
 .wp.passed{opacity:.5}
 .wp.passed .nm{text-decoration:line-through;text-decoration-color:var(--pass)}
@@ -463,7 +465,7 @@ tr.hl td{background:var(--accent-bg)}
     h.tail = r[1]; h.nose = r[2]; h.type = r[3];
     h.arr = { icao: r[4], iata: r[5] };
     h.onZ = r[6]; h.onL = r[7]; h.inZ = r[8]; h.inL = r[9];
-    r = /^WIND\s+(\d{6})\s+(\d{6})\s+(\d\d:\d\d)\/(\d\d:\d\d)([EL])\s+VRN?T\s+(\S+)\s+RTG\s+(\S+)\s+RLSE\s+(\S+)/.exec(textAt(2));
+    r = /^WIND\s+(\d{6})\s+(\d{6})\s+(\d\d:\d\d)\/(\d\d:\d\d)([EL])\s+VRN?T\s+(\S+)\s+RTN?G\s+(\S+)\s+RLSE\s+(\S+)/.exec(textAt(2));
     if (r) {
       h.windFrom = r[1]; h.windTo = r[2]; h.ete = r[3]; h.onTimeDelta = r[4]; h.onTimeFlag = r[5];
       h.variant = r[6]; h.routing = r[7]; h.release = r[8];
@@ -591,15 +593,25 @@ tr.hl td{background:var(--accent-bg)}
     var rd = [];
     while (idx < S.length && !/^INTENDED DEST/.test(S[idx].text) && !/^(DEP INFO|CLEARANCE|\*OFP\*|\(FPL)/.test(S[idx].text)) { rd.push(S[idx].text); idx++; }
     fms.redispatch = rd.join(' ');
-    if (idx < S.length && /^INTENDED DEST/.test(S[idx].text)) idx++;
+    // Redispatch plans print two ladders side by side (INTENDED DEST | INTERMEDIATE DEST) before the right-hand block.
+    var interX = null;
+    if (idx < S.length && /^INTENDED DEST/.test(S[idx].text)) {
+      S[idx].toks.forEach(function (t) { if (/^INTERMEDIATE$/.test(t.s) && interX == null) interX = t.x; });
+      idx++;
+    }
     var ladder = [], capt = { name: '', dom: '', min: '' }, lcl = [];
-    var rightRows = [];
-    var splitX = 250;
+    var rightRows = [], midRows = [], ladderDone = false;
+    var splitX = interX != null ? interX - 3 : 250;
+    var rightX = interX != null ? 360 : splitX;
     while (idx < S.length) {
       var Ln = S[idx];
       if (/^(DEP INFO|CLEARANCE|\*OFP\*)/.test(Ln.text)) break;
       var lt2 = Ln.toks.filter(function (t) { return t.x < splitX; });
-      var rt2 = Ln.toks.filter(function (t) { return t.x >= splitX; }).map(function (t) { return t.s; });
+      var rx = ladderDone ? splitX : rightX; // below the ladder (CI / LCL APT rows) the right block starts at the split
+      var rt2 = Ln.toks.filter(function (t) { return t.x >= rx; }).map(function (t) { return t.s; });
+      var mt2 = (interX != null && !ladderDone) ? Ln.toks.filter(function (t) { return t.x >= splitX && t.x < rightX; }).map(function (t) { return t.s; }) : [];
+      if (mt2.length) midRows.push(mt2);
+      if (lt2.length && lt2[0].s === 'REMF') ladderDone = true;
       var ltxt = lt2.map(function (t) { return t.s; });
       if (ltxt.length) {
         // find time token
@@ -630,6 +642,17 @@ tr.hl td{background:var(--accent-bg)}
       if (nx && !/^(DOM|MIN|SIGNED)/.test(nx) && !/^[A-Z0-9]{4}\s+\d+\s+\d\d:\d\d/.test(nx)) capt.name = nx;
     }
     out.ladder = ladder;
+    if (interX != null) {
+      var ladderMid = [];
+      midRows.forEach(function (mt) {
+        var ti2 = -1;
+        for (var k2 = 0; k2 < mt.length; k2++) if (/^-?\d\d:\d\d$/.test(mt[k2])) { ti2 = k2; break; }
+        if (ti2 >= 0) ladderMid.push({ label: mt.slice(0, ti2).join(' '), time: mt[ti2], min: hm(mt[ti2]), fuel: num(mt[mt.length - 1]) });
+      });
+      out.ladderIntermediate = ladderMid;
+      var rq = /POINT OF RDSP\s+(\S+)\s+MINF AT RDSP\s+(\d+)\s+PLNF AT RDSP\s+(\d+)/.exec(fms.redispatch || '');
+      out.redispatch = { point: rq ? rq[1] : '', minf: rq ? +rq[2] : null, plnf: rq ? +rq[3] : null, intermediate: ladderMid.length ? ladderMid[0].label : '' };
+    }
     out.lclApt = lcl;
     out.captain = capt;
     out.fuel = {};
@@ -946,10 +969,11 @@ function setFlight(parsed, persist) {
     try {
       if (window.parent !== window) {
         var okc = F.checks.filter(function (c) { return c.ok; }).length;
-        window.parent.postMessage({ navlogLoaded: { h: F.header, fms: { weights: F.fms && F.fms.weights, cruiseFL: F.fms && F.fms.cruiseFL }, routing: { dist: F.routing && F.routing.dist, ci: F.routing && F.routing.ci, perf: F.routing && F.routing.perf }, checks: [okc, F.checks.length] } }, location.origin);
+        window.parent.postMessage({ navlogLoaded: { h: F.header, fms: { weights: F.fms && F.fms.weights, cruiseFL: F.fms && F.fms.cruiseFL }, routing: { dist: F.routing && F.routing.dist, ci: F.routing && F.routing.ci, perf: F.routing && F.routing.perf }, checks: [okc, F.checks.length], etops: F.etopsAnalysis || null, ladder: F.ladder || [], lastFuel: W.length ? W[W.length - 1].fuel : null, redispatch: !!F.redispatch } }, location.origin);
       }
     } catch (e) {}
   }
+  computeSuspects();
   showApp();
 }
 
@@ -1024,6 +1048,23 @@ function hdrRow() {
     '<div class="c-eta">Est Z<small>(plan)</small></div><div class="c-ata">ATA Z</div><div class="c-fl">FL<small>MOR</small></div><div class="c-mach">Mach</div>' +
     '<div class="c-gs">GS<small>TAS</small></div><div class="c-wind">Wind<small>SAT</small></div><div class="c-fuel">Fuel plan<small>zone burn</small></div><div class="c-act">Fuel act<small>Δ plan</small></div></div>';
 }
+var SUSP = {};
+function computeSuspects() {
+  SUSP = {};
+  var bad = {};
+  (F.checks || []).forEach(function (c) { if (!c.ok) bad[c.name] = true; });
+  if (!bad['Every waypoint has position / ET / fuel'] && !bad['Leg distances add up'] && !bad['Fuel burn is continuous']) return;
+  function add(i, t) { (SUSP[i] = SUSP[i] || []).push(t); }
+  for (var i = 0; i < W.length; i++) {
+    var w = W[i], p = i ? W[i - 1] : null;
+    if (bad['Every waypoint has position / ET / fuel'] && (w.fuel == null || w.etMin == null || w.lat == null)) add(i, 'Some values for this fix could not be read. Check it against the PDF.');
+    if (!p) continue;
+    if (bad['Leg distances add up'] && w.zoneDist != null && p.remDist != null && w.remDist != null && Math.abs(w.zoneDist - (p.remDist - w.remDist)) > 2)
+      add(i, 'Leg distance does not tie: printed ' + w.zoneDist + ' NM, but remaining distance drops ' + (p.remDist - w.remDist) + ' NM.');
+    if (bad['Fuel burn is continuous'] && w.fuel != null && p.fuel != null && w.zbo != null && Math.abs(p.fuel - w.zbo - w.fuel) > 2)
+      add(i, 'Fuel does not tie: previous fix ' + fmtN(p.fuel) + ' minus burn ' + fmtN(w.zbo) + ' is ' + fmtN(p.fuel - w.zbo) + ', printed ' + fmtN(w.fuel) + '. The error may be here or at the previous fix.');
+  }
+}
 function wpRow(w, ro) {
   var i = w._w;
   function dd(x) { return x === '---' ? '' : x; }
@@ -1039,6 +1080,7 @@ function wpRow(w, ro) {
     '<div class="c-chk">' + (ro ? '' : '<button class="passbtn" data-pass="' + i + '" aria-label="Mark passed">✓</button>') + '</div>' +
     '<div class="c-awy awy">' + esc(w.airway) + '</div>' +
     '<div class="c-name"><div class="nm">' + nameTxt + (w.extra ? '<span class="ex">' + esc(w.extra) + '</span>' : '') + '</div>' +
+      (SUSP[i] ? '<div class="susp">⚠ ' + SUSP[i].map(esc).join(' ⚠ ') + '</div>' : '') +
       '<div class="pos">' + esc(w.latStr.replace(/^([NS])(\d{2})/, '$1$2°')) + ' ' + esc(w.lonStr.replace(/^([EW])(\d{3})/, '$1$2°')) + (desc ? ' · ' + esc(desc) : '') + '</div></div>' +
     '<div class="c-crs"><span class="lab">MC / MH</span><div class="big">' + esc(dd(w.mc)) + '</div><div class="sm">' + (w.mc === '---' ? '' : esc(dd(w.mh)) + ' · ' + esc(dd(w.tc)) + '/' + esc(dd(w.th))) + '</div></div>' +
     '<div class="c-dist"><span class="lab">Dist / Rem</span><div class="big">' + fmtN(w.zoneDist) + '</div><div class="sm">' + fmtN(w.remDist) + '</div></div>' +
@@ -1279,6 +1321,17 @@ function renderFuel(v) {
   var per = L.filter(function (r) { return r.label === 'PER 1K'; })[0];
   var o = '<div class="grid"><div class="card"><h3>Fuel ladder (lb) – ' + esc(h.dep.icao) + ' → ' + esc(h.arr.icao) + '</h3>' +
     '<table class="kv fuelbig"><tr><th>Item</th><th class="r">Time</th><th class="r">Fuel</th></tr>' + rows + '</table></div>';
+  if (F.redispatch && F.ladderIntermediate && F.ladderIntermediate.length) {
+    var rd = F.redispatch;
+    o += '<div class="card"><h3>Redispatch – ' + esc(rd.intermediate) + ' (intermediate destination)</h3>' +
+      '<table class="kv"><tr><td class="k">Point of redispatch</td><td class="r mono">' + esc(rd.point) + '</td></tr>' +
+      '<tr><td class="k">MINF at redispatch</td><td class="r mono">' + thou(rd.minf) + '</td></tr>' +
+      '<tr><td class="k">PLNF at redispatch</td><td class="r mono">' + thou(rd.plnf) + '</td></tr></table>' +
+      '<table class="kv fuelbig" style="margin-top:8px"><tr><th>Item</th><th class="r">Time</th><th class="r">Fuel</th></tr>' +
+      F.ladderIntermediate.filter(function (r) { return !(r.fuel === 0 && /^(N\/A|ADD|CF|UNSBL|CAPT)/.test(r.label)); }).map(function (r) {
+        return '<tr class="' + (/^(MIN T\/O|PLAN T\/O|PLAN GATE|REMF)$/.test(r.label) ? 'hl' : '') + '"><td>' + esc(r.label) + '</td><td class="r">' + esc(r.time) + '</td><td class="r">' + thou(r.fuel) + '</td></tr>';
+      }).join('') + '</table></div>';
+  }
   o += '<div>';
   o += '<div class="card"><h3>Cost index sensitivity</h3><table class="kv"><tr><th>Option</th><th class="r">Time</th><th class="r">Fuel</th></tr>' +
     ci.map(function (r) { return '<tr><td>Fly CI ' + esc(r.label.replace('CI ', '')) + ' instead of ' + esc(F.routing.ci) + '</td><td class="r">' + esc(r.time) + '</td><td class="r">' + (r.fuel > 0 ? '+' : '') + thou(r.fuel) + '</td></tr>'; }).join('') +
@@ -1571,6 +1624,11 @@ window.addEventListener('resize', function () { document.documentElement.style.s
 
 var th0 = store.get('navlog:theme'); if (th0) { document.documentElement.dataset.theme = th0; document.querySelector('meta[name=theme-color]').content = th0 === 'light' ? '#eef2f7' : '#0b1118'; }
 // test / integration hook: window.NavLogApp.load(parsedJson)
+window.addEventListener('message', function (ev) {
+  if (ev.origin !== location.origin || !ev.data || !ev.data.navlogReset) return;
+  if (KEY) { store.del('navlog:f:' + KEY); store.del('navlog:s:' + KEY); store.set('navlog:recent', (store.get('navlog:recent') || []).filter(function (r) { return r.key !== KEY; })); }
+  F = null; ST = null; KEY = null; showEmpty();
+});
 window.NavLogApp = { load: function (p) { p.navlogs.forEach(function (l, n) { l._n = n; }); TAB = 'nav'; setFlight(p, false); }, loadFile: loadPdf };
 showEmpty();
 })();
