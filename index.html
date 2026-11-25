@@ -158,10 +158,10 @@
   .layout.c1 .item{padding-top:.5em;padding-bottom:.5em;min-height:40px}
   @media (max-width:760px){
     .top{gap:6px 8px}
-    .ref,.tab small{display:none}
+    .ref,.tabs .tab small{display:none}
     .tab{padding:4px 12px}
   }
-  @media (max-width:1300px){.tab small{display:none}}
+  @media (max-width:1300px){.tabs .tab small{display:none}}
   .layout[hidden]{display:none !important}
   * {touch-action:manipulation}
   /* paged mode (narrow windows): one section at a time + chip bar */
@@ -182,7 +182,28 @@
 
   /* ===== NAV + PREFLIGHT / INFLIGHT VIEWS ===== */
   :root{--dng-bg:rgba(220,53,69,.14);--dng-bd:#c0392b;--dng-fg:#ff8a8a;--acc-bg:rgba(0,119,200,.16);--acc-bd:rgba(0,119,200,.55);--acc-fg:#7cc7ff}
-  .mainnav{display:flex;gap:6px;flex:none}
+  .mainnav{display:flex;gap:6px;flex:none;border-top:1px solid var(--border);padding-top:6px}
+  .mainnav .tab{flex:1;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;letter-spacing:.05em}
+  .mainnav .tab small{display:block;margin:2px 0 0;font:9px var(--mono);letter-spacing:.03em;font-weight:400;color:var(--dim)}
+  .mainnav .tab[aria-selected="true"] small{color:#9fc9ee}
+  .mainnav .tab[aria-selected="true"]{background:#0b2a47;border-color:#2b9bf0;color:#fff}
+  .fbar{display:flex;gap:16px;align-items:flex-end;margin-left:auto;flex-wrap:wrap}
+  .fb{display:flex;flex-direction:column;gap:1px}
+  .fb span{font:700 9px var(--mono);letter-spacing:.12em;color:var(--dim)}
+  .fb b{font:700 16px var(--mono);color:#fff;white-space:nowrap}
+  .fb:first-child b{font-size:20px;letter-spacing:.04em}
+  .fb b.dim{color:var(--dim)}
+  .flt{display:none !important}
+  #view-nav{flex:1;min-height:0;display:flex}
+  #view-nav[hidden]{display:none !important}
+  #view-nav iframe{flex:1;width:100%;border:0;border-radius:6px;background:#0b1118}
+  .ofpbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px}
+  .ofpbar .ofptx{flex:1;min-width:200px}
+  .ofpbar .ofpt{font-weight:700;font-size:14px;color:#fff}
+  .ofpbar .ofps{font-size:12px;color:var(--dim);margin-top:2px;line-height:1.3}
+  .ofpbar .ofps.ok{color:var(--done)}
+  .ofpbar .ofps.err{color:#ff9b9b}
+  @media (max-width:760px){.fbar{gap:10px;margin-left:0;width:100%}.fb b{font-size:13px}.fb:first-child b{font-size:16px}.mainnav .tab small{display:none}.mainnav .tab{font-size:11px;padding:4px 2px}}
   .orcatools{display:contents}
   .orcatools[hidden]{display:none !important}
   #view-orca{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
@@ -281,13 +302,6 @@
     <div class="ref" id="ref">FM 2602</div>
     <h1>FLIGHT <span>PLAN</span></h1>
   </div>
-  <div class="mainnav" role="tablist" aria-label="Section">
-    <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight</button>
-    <button class="tab" role="tab" id="nav-fuel" aria-selected="false">Fuel</button>
-    <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight</button>
-    <button class="tab" role="tab" id="nav-new" aria-selected="false">ETOPS</button>
-    <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA</button>
-  </div>
   <div class="orcatools" id="orcatools">
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tab0" aria-selected="true">PAGE 1 <small>4.10.4 Checklist</small></button>
@@ -296,6 +310,15 @@
     <div class="bar">
       <div class="track"><div class="fill" id="fill"></div></div>
     </div>
+  </div>
+  <div class="fbar" id="fbar" aria-label="Flight summary">
+    <div class="fb"><span>FLIGHT</span><b id="fbNo">--</b></div>
+    <div class="fb"><span>ROUTE</span><b id="fbRt">---- &rarr; ----</b></div>
+    <div class="fb fbac"><span>AIRCRAFT</span><b id="fbAc">--</b></div>
+    <div class="fb"><span>OUT</span><b id="fbOut">----</b></div>
+    <div class="fb"><span>OFF</span><b id="fbOff">----</b></div>
+    <div class="fb"><span>ON</span><b id="fbOn">----</b></div>
+    <div class="fb"><span>IN</span><b id="fbIn">----</b></div>
   </div>
   <label class="flt"><span>INFO</span><input id="flt" type="text" maxlength="12" placeholder="Flight info" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight info"></label>
   <div class="pill wait" id="status" role="status">CHECKING…</div>
@@ -306,11 +329,20 @@
 <div class="layout" id="p1" hidden></div>
 </div>
 <div class="view" id="view-pre" hidden></div>
+<div id="view-nav" hidden><iframe id="navframe" title="Nav Log"></iframe></div>
 <div class="view" id="view-in" hidden></div>
 <div class="view" id="view-fuel" hidden></div>
 <div class="view" id="view-new" hidden></div>
 
 <footer id="foot">Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
+<nav class="mainnav" role="tablist" aria-label="Section">
+  <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight<small>PDF &middot; flight &middot; FMS</small></button>
+  <button class="tab" role="tab" id="nav-nav" aria-selected="false">Nav Log<small>fix by fix</small></button>
+  <button class="tab" role="tab" id="nav-fuel" aria-selected="false">Fuel<small>bingo</small></button>
+  <button class="tab" role="tab" id="nav-new" aria-selected="false">ETOPS<small>alt &middot; CPs</small></button>
+  <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA<small>checklists</small></button>
+  <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight<small>cruise</small></button>
+</nav>
 
 <script>
 (function(){
@@ -885,6 +917,39 @@
 
   // ═══════════ 0) FLIGHT + FMS DATA ═══════════
   var flightRef = { dep: "", arr: "", block: "", on: [] };
+  // OFP upload (parsed on this device by the Nav Log page; the PDF never leaves it)
+  var ofpBar = el("div", "ofpbar full");
+  var ofpTx = el("div", "ofptx");
+  ofpTx.appendChild(el("div", "ofpt", "Load the flight plan"));
+  var ofpSt = el("div", "ofps", "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times and FMS data fill in below; you can type over any field.");
+  ofpTx.appendChild(ofpSt);
+  var ofpBtn = el("button", "btn big", "Choose PDF");
+  var ofpFile = document.createElement("input"); ofpFile.type = "file"; ofpFile.accept = "application/pdf,.pdf"; ofpFile.hidden = true;
+  ofpBar.appendChild(ofpTx); ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpFile);
+  viewPre.appendChild(ofpBar);
+  ofpBtn.addEventListener("click", function(){ ofpFile.value = ""; ofpFile.click(); });
+  ofpFile.addEventListener("change", function(){
+    var fl = ofpFile.files && ofpFile.files[0]; if(!fl) return;
+    ofpSt.className = "ofps"; ofpSt.textContent = "Reading " + fl.name + "…";
+    window.nlLoadFile(fl);
+  });
+  window.addEventListener("message", function(ev){
+    if(ev.origin !== location.origin || !ev.data || !ev.data.navlogLoaded) return;
+    var d = ev.data.navlogLoaded, h = d.h || {}, fm = d.fms || {}, rt = d.routing || {};
+    var chk = d.checks ? " · parse " + d.checks[0] + "/" + d.checks[1] : "";
+    var cs = String(h.callsign || ""), m = /^([A-Z]{3})(\d+)/.exec(cs);
+    var fno = m ? ((m[1] === "UAL" ? "UA" : m[1]) + " " + m[2]) : cs;
+    var tm = String(h.ete || "").replace(/^0/, "");
+    var ap = String(h.type || "").replace(/^B/, "");
+    window.ofpApply({
+      flight: fno, dep: h.dep && h.dep.icao, arr: h.arr && h.arr.icao,
+      out: h.outZ, off: h.offZ, on: h.onZ, inn: h.inZ, ap: ap,
+      zfw: fm.weights && fm.weights.ZFW && fm.weights.ZFW.planned ? (fm.weights.ZFW.planned / 1000).toFixed(1) : "",
+      crz: fm.cruiseFL ? "FL" + fm.cruiseFL : "", ci: rt.ci, df: rt.perf, dist: rt.dist, time: tm
+    });
+    ofpSt.className = d.checks && d.checks[0] !== d.checks[1] ? "ofps err" : "ofps ok";
+    ofpSt.textContent = fno + " " + (h.dep ? h.dep.icao : "") + " to " + (h.arr ? h.arr.icao : "") + " loaded" + chk + ". Fields filled; RSV is left for you to enter.";
+  });
   (function(){
     var RT_KEY = "orca_route", FMS_KEY = "orca_fms";
     var r = { dep: "", arr: "", out: "", off: "", on: "", inn: "" }, rt = 0;
@@ -958,7 +1023,7 @@
     var clr = el("button", "btn big", "Clear flight times");
     var brow = el("div", "row2"); brow.appendChild(fmsBtn); brow.appendChild(clr);
     C.body.appendChild(brow);
-    C.body.appendChild(el("div", "hint", "Times are UTC, 4 digits (1435 for 1435Z). Block and air time handle crossing midnight. The flight number also shows in the INFO box in the header on the other pages."));
+    C.body.appendChild(el("div", "hint", "Times are UTC, 4 digits (1435 for 1435Z). Block and air time handle crossing midnight. The flight number, route, aircraft and times show in the header on every page."));
     addStale(C.warn, function(){ return rt; }, "flight times");
     viewPre.appendChild(C.wrap);
 
@@ -1002,6 +1067,7 @@
       if(!any){ lsDel(RT_KEY); rt = 0; }
       else{ rt = Date.now(); lsSet(RT_KEY, JSON.stringify({ dep: r.dep, arr: r.arr, out: r.out, off: r.off, on: r.on, inn: r.inn, t: rt })); }
       setEdited(edited, rt); refreshStale(); render();
+      window.dispatchEvent(new Event("fbsync"));
     }
     function saveFms(){
       var any = Object.keys(f).some(function(k){ return f[k].trim(); });
@@ -1041,8 +1107,16 @@
       ["out", "off", "on", "inn"].forEach(function(k){ r[k] = ""; tIn[k].value = ""; });
       Object.keys(f).forEach(function(k){ f[k] = ""; map[k].value = ""; });
       open = false; lsDel(RT_KEY); lsDel(FMS_KEY); rt = 0; ft = 0;
-      setEdited(edited, 0); setEdited(fEdited, 0); render(); refreshStale();
+      setEdited(edited, 0); setEdited(fEdited, 0); render(); refreshStale(); window.dispatchEvent(new Event("fbsync"));
     });
+    window.ofpApply = function(d){
+      function put(i, v){ if(v == null || v === "") return; i.value = String(v); i.dispatchEvent(new Event("input")); }
+      put(fltIn, d.flight); put(depIn, d.dep); put(arrIn, d.arr);
+      put(tIn.out, d.out); put(tIn.off, d.off); put(tIn.on, d.on); put(tIn.inn, d.inn);
+      if(d.ap && FM.airplanes.some(function(a){ return a.id === d.ap; })){ apSel.value = d.ap; apSel.dispatchEvent(new Event("change")); }
+      put(ZF, d.zfw); put(CZ, d.crz); put(CI, d.ci); put(DF, d.df); put(DI, d.dist); put(TM, d.time);
+      open = true; saveFms();
+    };
     setEdited(edited, rt); setEdited(fEdited, ft); render();
   })();
 
@@ -1687,12 +1761,36 @@
   })();
 
   // ═══════════ NAVIGATION ═══════════
-  var views = { orca: $("view-orca"), pre: viewPre, "in": viewIn, fuel: viewFuel, "new": viewNew };
-  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), "in": $("nav-in"), fuel: $("nav-fuel"), "new": $("nav-new") };
+  var views = { orca: $("view-orca"), pre: viewPre, nav: $("view-nav"), "in": viewIn, fuel: viewFuel, "new": viewNew };
+  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), nav: $("nav-nav"), "in": $("nav-in"), fuel: $("nav-fuel"), "new": $("nav-new") };
+
+  // Nav Log lives in its own page (navlog.html), loaded on first use.
+  var navIf = $("navframe"), navReady = false, navQ = [];
+  function ensureNav(){
+    if(navIf.getAttribute("src")) return;
+    navIf.addEventListener("load", function(){ navReady = true; navQ.splice(0).forEach(function(f){ f(); }); });
+    navIf.setAttribute("src", "navlog.html");
+  }
+  window.nlLoadFile = function(file){
+    ensureNav();
+    var run = function(){ try{ navIf.contentWindow.NavLogApp.loadFile(file); }catch(e){} };
+    if(navReady) run(); else navQ.push(run);
+  };
+
+  function updFbar(){
+    var r = lsJSON("orca_route") || {}, a = lsJSON(AOA_KEY) || {};
+    function set(id, v){ var n = $(id); var ok = v && String(v).trim(); n.textContent = ok ? v : "----"; n.className = ok ? "" : "dim"; }
+    set("fbNo", flt.value.trim());
+    $("fbRt").textContent = (r.dep || "----") + " \u2192 " + (r.arr || "----");
+    var ap = FM.airplanes.filter(function(x){ return x.id === a.ap; })[0];
+    $("fbAc").textContent = ap ? ap.name : "--";
+    set("fbOut", r.out); set("fbOff", r.off); set("fbOn", r.on); set("fbIn", r.inn);
+  }
+  window.addEventListener("fltsync", updFbar); window.addEventListener("fbsync", updFbar); window.addEventListener("apsync", updFbar);
   var foot = $("foot"), ref = $("ref");
   var footOrca = foot.textContent;
   var footNew = "Reference aid only. The Flight Manual and OFP govern.";
-  var REF = { pre: "ORCA · PREFLIGHT", "in": "ORCA · INFLIGHT", fuel: "FUEL", "new": "ETOPS" };
+  var REF = { pre: "PREFLIGHT", nav: "NAV LOG", "in": "INFLIGHT", fuel: "FUEL", "new": "ETOPS" };
 
   function showView(v, persist){
     Object.keys(views).forEach(function(k){
@@ -1700,7 +1798,8 @@
       btns[k].setAttribute("aria-selected", k === v ? "true" : "false");
     });
     $("orcatools").hidden = (v !== "orca");
-    flt.parentNode.hidden = (v === "pre");
+    if(v === "nav") ensureNav();
+    updFbar();
     foot.textContent = (v === "orca") ? footOrca : footNew;
     if(v === "orca"){ window.dispatchEvent(new Event("orcashown")); }
     else{ ref.textContent = REF[v]; refreshStale(); }
