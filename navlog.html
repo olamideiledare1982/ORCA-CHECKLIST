@@ -320,6 +320,16 @@ tr.hl td{background:var(--accent-bg)}
     });
     return rows.map(function (L) {
       L.items.sort(function (a, b) { return a.x - b.x; });
+      // pdf.js sometimes splits one printed number into pieces that touch each other
+      // (e.g. "30" + "0" for 300). Glue pieces with no visible gap back together.
+      var merged = [];
+      L.items.forEach(function (it) {
+        var p = merged[merged.length - 1];
+        if (p && Math.abs(it.x - (p.x + p.w)) < 0.6 && !/\s$/.test(p.s) && !/^\s/.test(it.s)) {
+          merged[merged.length - 1] = { s: p.s + it.s, x: p.x, y: p.y, w: p.w + it.w };
+        } else merged.push(it);
+      });
+      L.items = merged;
       var toks = [];
       L.items.forEach(function (it) {
         var cw = it.w / it.s.length;
@@ -1478,6 +1488,7 @@ async function loadPdf(file) {
     busy(null);
     var msg = err && err.message ? err.message : String(err);
     if (/password/i.test(msg)) msg = 'This PDF is password-protected.';
+    try { if (window.parent !== window) window.parent.postMessage({ navlogError: msg }, location.origin); } catch (e2) {}
     if (F) { alert('Couldn’t read that file: ' + msg); } else showEmpty(msg);
   }
 }

@@ -195,7 +195,8 @@
   .fb b.dim{color:var(--dim)}
   .flt{display:none !important}
   #view-nav{flex:1;min-height:0;display:flex}
-  #view-nav[hidden]{display:none !important}
+  #view-nav[hidden]{display:flex !important;position:fixed;left:-3000px;top:0;width:1100px;height:700px;visibility:hidden;pointer-events:none}
+  .ofpfile{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
   #view-nav iframe{flex:1;width:100%;border:0;border-radius:6px;background:#0b1118}
   .ofpbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px}
   .ofpbar .ofptx{flex:1;min-width:200px}
@@ -924,17 +925,26 @@
   var ofpSt = el("div", "ofps", "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times and FMS data fill in below; you can type over any field.");
   ofpTx.appendChild(ofpSt);
   var ofpBtn = el("button", "btn big", "Choose PDF");
-  var ofpFile = document.createElement("input"); ofpFile.type = "file"; ofpFile.accept = "application/pdf,.pdf"; ofpFile.hidden = true;
+  var ofpFile = document.createElement("input"); ofpFile.type = "file"; ofpFile.accept = "application/pdf,.pdf,application/octet-stream"; ofpFile.className = "ofpfile";
   ofpBar.appendChild(ofpTx); ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpFile);
   viewPre.appendChild(ofpBar);
   ofpBtn.addEventListener("click", function(){ ofpFile.value = ""; ofpFile.click(); });
   ofpFile.addEventListener("change", function(){
     var fl = ofpFile.files && ofpFile.files[0]; if(!fl) return;
     ofpSt.className = "ofps"; ofpSt.textContent = "Reading " + fl.name + "…";
-    window.nlLoadFile(fl);
+    clearTimeout(window.nlTimer);
+    window.nlTimer = setTimeout(function(){
+      ofpSt.className = "ofps err";
+      ofpSt.textContent = "Still no result after 30 seconds. Open the Nav Log tab and choose the PDF there, then tell me what it shows.";
+    }, 30000);
+    try{ window.nlLoadFile(fl); }
+    catch(e){ clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not start: " + (e && e.message ? e.message : e); }
   });
   window.addEventListener("message", function(ev){
-    if(ev.origin !== location.origin || !ev.data || !ev.data.navlogLoaded) return;
+    if(ev.origin !== location.origin || !ev.data) return;
+    if(ev.data.navlogError){ clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not read that PDF: " + ev.data.navlogError; return; }
+    if(!ev.data.navlogLoaded) return;
+    clearTimeout(window.nlTimer);
     var d = ev.data.navlogLoaded, h = d.h || {}, fm = d.fms || {}, rt = d.routing || {};
     var chk = d.checks ? " · parse " + d.checks[0] + "/" + d.checks[1] : "";
     var cs = String(h.callsign || ""), m = /^([A-Z]{3})(\d+)/.exec(cs);
@@ -1773,7 +1783,10 @@
   }
   window.nlLoadFile = function(file){
     ensureNav();
-    var run = function(){ try{ navIf.contentWindow.NavLogApp.loadFile(file); }catch(e){} };
+    var run = function(){
+      try{ navIf.contentWindow.NavLogApp.loadFile(file); }
+      catch(e){ window.postMessage({ navlogError: "Nav Log page not ready (" + (e && e.message ? e.message : e) + ")" }, location.origin); }
+    };
     if(navReady) run(); else navQ.push(run);
   };
 
@@ -1786,6 +1799,7 @@
     $("fbAc").textContent = ap ? ap.name : "--";
     set("fbOut", r.out); set("fbOff", r.off); set("fbOn", r.on); set("fbIn", r.inn);
   }
+  setTimeout(ensureNav, 1500);
   window.addEventListener("fltsync", updFbar); window.addEventListener("fbsync", updFbar); window.addEventListener("apsync", updFbar);
   var foot = $("foot"), ref = $("ref");
   var footOrca = foot.textContent;
