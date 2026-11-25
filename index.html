@@ -194,10 +194,9 @@
   .fb:first-child b{font-size:20px;letter-spacing:.04em}
   .fb b.dim{color:var(--dim)}
   .flt{display:none !important}
-  #view-nav{flex:1;min-height:0;display:flex}
-  #view-nav[hidden]{display:flex !important;position:fixed;left:-3000px;top:0;width:1100px;height:700px;visibility:hidden;pointer-events:none}
+  #view-nav{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:6px;background:#0b1118}
+  #view-nav[hidden]{display:none !important}
   .ofpfile{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-  #view-nav iframe{flex:1;width:100%;border:0;border-radius:6px;background:#0b1118}
   .ofpbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px}
   .ofpbar .ofptx{flex:1;min-width:200px}
   .ofpbar .ofpt{font-weight:700;font-size:14px;color:#fff}
@@ -330,7 +329,7 @@
 <div class="layout" id="p1" hidden></div>
 </div>
 <div class="view" id="view-pre" hidden></div>
-<div id="view-nav" hidden><iframe id="navframe" title="Nav Log"></iframe></div>
+<div id="view-nav" hidden></div>
 <div class="view" id="view-in" hidden></div>
 <div class="view" id="view-fuel" hidden></div>
 <div class="view" id="view-new" hidden></div>
@@ -345,6 +344,7 @@
   <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight<small>cruise</small></button>
 </nav>
 
+<script src="navlog-ui.js"></script>
 <script>
 (function(){
   "use strict";
@@ -940,12 +940,12 @@
     try{ window.nlLoadFile(fl); }
     catch(e){ clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not start: " + (e && e.message ? e.message : e); }
   });
-  window.addEventListener("message", function(ev){
-    if(ev.origin !== location.origin || !ev.data) return;
-    if(ev.data.navlogError){ clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not read that PDF: " + ev.data.navlogError; return; }
-    if(!ev.data.navlogLoaded) return;
+  window.addEventListener("navlogerror", function(ev){
+    clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not read that PDF: " + ev.detail;
+  });
+  window.addEventListener("navlogloaded", function(ev){
     clearTimeout(window.nlTimer);
-    var d = ev.data.navlogLoaded, h = d.h || {}, fm = d.fms || {}, rt = d.routing || {};
+    var d = ev.detail, h = d.h || {}, fm = d.fms || {}, rt = d.routing || {};
     var chk = d.checks ? " · parse " + d.checks[0] + "/" + d.checks[1] : "";
     var cs = String(h.callsign || ""), m = /^([A-Z]{3})(\d+)/.exec(cs);
     var fno = m ? ((m[1] === "UAL" ? "UA" : m[1]) + " " + m[2]) : cs;
@@ -1817,21 +1817,15 @@
   var views = { orca: $("view-orca"), pre: viewPre, nav: $("view-nav"), "in": viewIn, fuel: viewFuel, "new": viewNew };
   var btns = { orca: $("nav-orca"), pre: $("nav-pre"), nav: $("nav-nav"), "in": $("nav-in"), fuel: $("nav-fuel"), "new": $("nav-new") };
 
-  // Nav Log lives in its own page (navlog.html), loaded on first use.
-  var navIf = $("navframe"), navReady = false, navQ = [];
+  // The Nav Log is built into this page (navlog-ui.js, in its own shadow root so styles never mix).
+  var navHost = $("view-nav"), navMounted = false;
   function ensureNav(){
-    if(navIf.getAttribute("src")) return;
-    navIf.addEventListener("load", function(){ navReady = true; navQ.splice(0).forEach(function(f){ f(); }); });
-    navIf.setAttribute("src", "navlog.html");
+    if(navMounted) return;
+    navMounted = true;
+    try{ window.NavLog.mount(navHost); }
+    catch(e){ navMounted = false; window.dispatchEvent(new CustomEvent("navlogerror", { detail: "Nav Log could not start (" + (e && e.message ? e.message : e) + ")" })); }
   }
-  window.nlLoadFile = function(file){
-    ensureNav();
-    var run = function(){
-      try{ navIf.contentWindow.NavLogApp.loadFile(file); }
-      catch(e){ window.postMessage({ navlogError: "Nav Log page not ready (" + (e && e.message ? e.message : e) + ")" }, location.origin); }
-    };
-    if(navReady) run(); else navQ.push(run);
-  };
+  window.nlLoadFile = function(file){ ensureNav(); window.NavLog.loadFile(file); };
 
   function updFbar(){
     var r = lsJSON("orca_route") || {}, a = lsJSON(AOA_KEY) || {};
@@ -1890,7 +1884,7 @@
     if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, route and times, FMS data, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel, time fields and the loaded Nav Log with its ATA and fuel entries.\n\nAirplane and ETOPS selections are kept.")) return;
     if(window.orcaResetChecks) window.orcaResetChecks();
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
-    try{ if(navIf.contentWindow) navIf.contentWindow.postMessage({ navlogReset: true }, location.origin); }catch(e){}
+    try{ if(navMounted) window.NavLog.reset(); }catch(e){}
     ofpSt.className = "ofps"; ofpSt.textContent = "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in. FMS data you type yourself.";
     refreshStale();
   });
