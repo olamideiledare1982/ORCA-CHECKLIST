@@ -148,7 +148,7 @@ function showEmpty(err) {
   var rec = store.get('navlog:recent') || [];
   $('#recent').innerHTML = rec.length ? '<h3>Recent flights on this device</h3>' + rec.map(function (r) {
     return '<button data-recent="' + esc(r.key) + '"><span><span class="t">' + esc(r.title) + '</span> <span class="d">' + esc(r.type) + ' ' + esc(r.tail) + '</span></span><span class="d">' + esc(r.date) + '</span></button>';
-  }).join('') : '';
+  }).join('') + '<div style="margin-top:10px"><button class="btn" id="clearRecent">Clear recent flights</button></div>' : '';
 }
 function renderTab() {
   var v = $('#view');
@@ -679,7 +679,7 @@ function openRecent(key) {
 
 /* ======================= events ======================= */
 root.addEventListener('click', function (e) {
-  var t = e.target.closest('[data-pass],[data-tab],[data-opt],[data-note],[data-recent],[data-copy],#btnOpen,#btnChoose,#btnView,#btnTheme,#chkPill,#offNow,#offPlan,#jumpNext,#clearEntries,#delFlight');
+  var t = e.target.closest('[data-pass],[data-tab],[data-opt],[data-note],[data-recent],[data-copy],#btnOpen,#btnChoose,#btnView,#clearRecent,#btnTheme,#chkPill,#offNow,#offPlan,#jumpNext,#clearEntries,#delFlight');
   if (!t) return;
   if (t.dataset.pass != null) { togglePass(+t.dataset.pass); return; }
   if (t.dataset.tab) { TAB = t.dataset.tab; renderTab(); host.scrollTo(0, 0); return; }
@@ -697,6 +697,10 @@ root.addEventListener('click', function (e) {
   if (t.dataset.copy) { copyText(t.dataset.copy === 'route' ? F.atc.route : F.atc.field18, t); return; }
   switch (t.id) {
     case 'btnView': viewPdf(); break;
+    case 'clearRecent': if (confirm('Clear all recent flights on this device? This removes their saved entries and PDFs.')) {
+      (store.get('navlog:recent') || []).forEach(function (r) { store.del('navlog:f:' + r.key); store.del('navlog:s:' + r.key); });
+      store.set('navlog:recent', []); pdfdb.clear().catch(function () {}); F = null; ST = null; KEY = null; showEmpty();
+    } break;
     case 'btnOpen': case 'btnChoose': $('#file').value = ''; $('#file').click(); break;
     case 'btnTheme': var th = host.dataset.theme === 'light' ? 'dark' : 'light'; host.dataset.theme = th; t.innerHTML = th === 'light' ? '&#9790;' : '&#9728;'; store.set('navlog:theme', th); break;
     case 'chkPill': TAB = 'notes'; renderTab(); host.scrollTo(0, 0); break;
