@@ -43,6 +43,9 @@ function nowMin() { var d = new Date(); return d.getUTCHours() * 60 + d.getUTCMi
 function nowZ() { var m = nowMin(); return pad(Math.floor(m / 60)) + pad(m % 60); }
 function sgn(n) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n); }
 function fmtN(n) { return n == null ? '' : String(n); }
+function fk(n) { return n == null || isNaN(n) ? '' : (Math.round(n / 100) / 10).toFixed(1); }
+function sgnk(n) { var k = Math.round(n / 100) / 10; return (k > 0 ? '+' : k < 0 ? '\u2212' : '\u00b1') + Math.abs(k).toFixed(1); }
+function fuelIn(s) { var x = parseFloat(String(s == null ? '' : s).replace(/,/g, '')); if (isNaN(x)) return null; return Math.round(x < 1000 ? x * 1000 : x); }
 function thou(n) { return n == null ? '' : String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 function satTxt(s) { if (!s || s === '---') return ''; return (s[0] === 'M' ? '−' : '+') + s.slice(1); }
 function flNum(fl) { var m = /^F(\d{3})$/.exec(fl || ''); return m ? parseInt(m[1], 10) : null; }
@@ -117,7 +120,7 @@ function firstOpenIdx() { for (var i = 0; i < W.length; i++) if (!ST.pass[i]) re
 /* ======================= rendering: shell ======================= */
 var TABS = [];
 function buildTabs() {
-  TABS = [['nav', 'Nav Log'], ['brief', 'Brief'], ['fuel', 'Fuel'], ['route', 'Route']];
+  TABS = [['brief', 'Brief'], ['nav', 'Nav Log'], ['fuel', 'Fuel'], ['route', 'Route']];
   if (F.etopsAnalysis || F.navlogs[0].events.some(function (e) { return e.type === 'etops' || e.type === 'cp'; })) TABS.push(['etops', 'ETOPS']);
   if (F.navlogs.length > 1) TABS.push(['alt', 'Alternate']);
   TABS.push(['notes', 'Remarks & Raw']);
@@ -208,7 +211,7 @@ function wpRow(w, ro) {
     '<div class="c-mach"><div class="big">' + mach + '</div></div>' +
     '<div class="c-gs"><span class="lab">GS / TAS</span>' + gsTas + '</div>' +
     '<div class="c-fuel"><span class="lab">Fuel / Burn</span><div class="big">' + fmtN(w.fuel) + '</div><div class="sm">' + (w.zbo ? '−' + fmtN(w.zbo) : '') + '</div></div>' +
-    '<div class="c-act">' + (ro ? '' : '<span class="lab">Fuel actual</span><div class="actwrap"><input type="text" class="t4" inputmode="numeric" maxlength="6" placeholder="lbs" data-fuel="' + i + '"><div class="delta" data-df></div></div>') + '</div>' +
+    '<div class="c-act">' + (ro ? '' : '<span class="lab">Fuel actual</span><div class="actwrap"><input type="text" class="t4" inputmode="decimal" maxlength="6" placeholder="k lb" data-fuel="' + i + '"><div class="delta" data-df></div></div>') + '</div>' +
     (ro ? '' : '<button class="notebtn" data-note="' + i + '" title="Note">✎</button>') +
     '</div>';
   return h;
@@ -298,12 +301,12 @@ function refreshDynamic() {
       else { dt.textContent = ''; dt.className = 'delta'; }
     }
     var fi = $('[data-fuel]', r);
-    if (fi && root.activeElement !== fi) fi.value = p && p.fuel != null ? p.fuel : '';
+    if (fi && root.activeElement !== fi) fi.value = p && p.fuel !== '' && p.fuel != null && !isNaN(+p.fuel) ? fk(+p.fuel) : '';
     var df = $('[data-df]', r);
     if (df) {
       if (p && p.fuel !== '' && p.fuel != null && !isNaN(+p.fuel)) {
         var d2 = Math.round(+p.fuel - W[i].fuel);
-        df.textContent = sgn(d2); df.className = 'delta ' + (d2 < -500 ? 'bad' : d2 < 0 ? 'late' : 'good');
+        df.textContent = sgnk(d2); df.className = 'delta ' + (d2 < -500 ? 'bad' : d2 < 0 ? 'late' : 'good');
       } else { df.textContent = ''; df.className = 'delta'; }
     }
     var nb = $('.notebtn', r);
@@ -335,7 +338,7 @@ function refreshDynamic() {
   if (lf >= 0) {
     var d3 = Math.round(+ST.pass[lf].fuel - W[lf].fuel);
     var remf = F.fuel.remf ? F.fuel.remf.fuel : W[dst].fuel;
-    S += '<div><div class="k">Fuel vs plan</div><div class="v ' + (d3 < -500 ? 'bad' : d3 < 0 ? 'late' : 'good') + '">' + sgn(d3) + '</div><div class="s">at ' + esc(W[lf].ident) + ' · proj. dest ' + thou(remf + d3) + '</div></div>';
+    S += '<div><div class="k">Fuel vs plan</div><div class="v ' + (d3 < -500 ? 'bad' : d3 < 0 ? 'late' : 'good') + '">' + sgnk(d3) + '</div><div class="s">at ' + esc(W[lf].ident) + ' · proj. dest ' + thou(remf + d3) + '</div></div>';
   } else {
     S += '<div><div class="k">Fuel vs plan</div><div class="v" style="color:var(--muted)">–</div><div class="s">enter fuel at a fix</div></div>';
   }
@@ -461,16 +464,16 @@ function renderFuel(v) {
   // gate fuel check
   var pg = F.fuel.planGate;
   if (pg) {
-    o += '<div class="sec">Gate fuel check</div><div class="card"><div class="ctl" style="margin:0"><label>Fuel on board at gate (lb) <input type="text" class="t4" style="width:100px" id="gateFuel" inputmode="numeric" value="' + esc(ST.gateFuel || '') + '"></label><span id="gateRes" class="mono"></span></div></div>';
+    o += '<div class="sec">Gate fuel check</div><div class="card"><div class="ctl" style="margin:0"><label>Fuel on board at gate (k lb) <input type="text" class="t4" style="width:100px" id="gateFuel" inputmode="decimal" value="' + esc(ST.gateFuel || '') + '"></label><span id="gateRes" class="mono"></span></div></div>';
   }
   v.innerHTML = o;
   var gf = $('#gateFuel');
   function upd() {
     var r = $('#gateRes'); if (!r || !gf) return;
-    var n = parseFloat(gf.value);
-    if (isNaN(n)) { r.textContent = 'Plan gate ' + thou(pg.fuel) + '  ·  min T/O + taxi ' + thou((F.fuel.minTO ? F.fuel.minTO.fuel : 0) + (F.fuel.taxi ? F.fuel.taxi.fuel : 0)); r.className = 'mono'; return; }
+    var n = fuelIn(gf.value);
+    if (n == null) { r.textContent = 'Plan gate ' + thou(pg.fuel) + '  ·  min T/O + taxi ' + thou((F.fuel.minTO ? F.fuel.minTO.fuel : 0) + (F.fuel.taxi ? F.fuel.taxi.fuel : 0)); r.className = 'mono'; return; }
     var d = Math.round(n - pg.fuel), minGate = (F.fuel.minTO ? F.fuel.minTO.fuel : 0) + (F.fuel.taxi ? F.fuel.taxi.fuel : 0);
-    r.innerHTML = 'Plan ' + thou(pg.fuel) + ' · <b class="' + (d < 0 ? 'bad' : 'good') + '">' + sgn(d) + '</b> · vs min T/O + taxi ' + thou(minGate) + ': <b class="' + (n < minGate ? 'bad' : 'good') + '">' + sgn(Math.round(n - minGate)) + '</b>';
+    r.innerHTML = 'Plan ' + thou(pg.fuel) + ' · <b class="' + (d < 0 ? 'bad' : 'good') + '">' + sgnk(d) + '</b> · vs min T/O + taxi ' + thou(minGate) + ': <b class="' + (n < minGate ? 'bad' : 'good') + '">' + sgnk(Math.round(n - minGate)) + '</b>';
   }
   if (gf) { gf.addEventListener('input', function () { ST.gateFuel = gf.value; saveState(); upd(); }); upd(); }
 }
@@ -727,7 +730,7 @@ root.addEventListener('change', function (e) {
     saveState(); applyFilters(); refreshDynamic(); return;
   }
   if (t.dataset.fuel != null) {
-    var j = +t.dataset.fuel, fv = t.value.replace(/[^\d]/g, '');
+    var j = +t.dataset.fuel, fv = (function (x) { return x == null ? '' : String(x); })(fuelIn(t.value));
     if (fv === '') { if (ST.pass[j]) ST.pass[j].fuel = ''; }
     else {
       if (!ST.pass[j]) { for (var k3 = 0; k3 < j; k3++) if (!ST.pass[k3]) ST.pass[k3] = { ata: '', fuel: '', auto: true }; ST.pass[j] = { ata: nowZ(), fuel: '', auto: false }; }

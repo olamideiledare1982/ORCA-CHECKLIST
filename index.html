@@ -336,8 +336,8 @@
 
 <footer id="foot">Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
 <nav class="mainnav" role="tablist" aria-label="Section">
-  <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight<small>PDF &middot; flight &middot; FMS</small></button>
   <button class="tab" role="tab" id="nav-nav" aria-selected="false">Nav Log<small>fix by fix</small></button>
+  <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight<small>PDF &middot; flight &middot; FMS</small></button>
   <button class="tab" role="tab" id="nav-fuel" aria-selected="false">Fuel<small>bingo</small></button>
   <button class="tab" role="tab" id="nav-new" aria-selected="false">ETOPS<small>alt &middot; CPs</small></button>
   <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA<small>checklists</small></button>
@@ -1070,6 +1070,15 @@
     var DF = inp({ placeholder: "+0.0/+0.0", maxlength: "12", "aria-label": "Drag and fuel flow factors" });
     var map = { zfw: ZF, rsv: RS, crz: CZ, ci: CI, df: DF, dist: DI, time: TM };
     Object.keys(map).forEach(function(k){ map[k].value = f[k]; });
+    // ZFW and reserve are thousands of pounds with one decimal (123.5). Whole numbers or pounds are tidied on leaving the box.
+    [ZF, RS].forEach(function(box){
+      box.addEventListener("blur", function(){
+        var x = parseFloat(String(box.value).replace(/,/g, "")); if(isNaN(x)) return;
+        if(x >= 1000) x = x / 1000;
+        var v = x.toFixed(1);
+        if(v !== box.value){ box.value = v; box.dispatchEvent(new Event("input", { bubbles: true })); }
+      });
+    });
     var rows = [[["ZFW (k lb)", ZF], ["RSV (k lb)", RS]], [["CRZ ALT", CZ], ["CI", CI]], [["D/F (DRAG / FUEL FLOW)", DF], ["DIST (nm)", DI]], [["TIME (from flight plan)", TM]]];
     rows.forEach(function(rw){
       var d = el("div", "row2"); rw.forEach(function(x){ d.appendChild(field(x[0], x[1])); }); F.body.appendChild(d);
