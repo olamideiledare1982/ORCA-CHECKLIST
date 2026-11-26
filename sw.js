@@ -1,6 +1,6 @@
 // ORCA Checklist service worker
 // Bump VERSION whenever you change any file so devices pick up the update.
-const VERSION = "orca-v65";
+const VERSION = "orca-v66";
 const ASSETS = [
   "./",
   "./index.html",

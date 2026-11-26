@@ -1956,6 +1956,32 @@
   newFlt.appendChild(el("div", "hint", "Starting a new flight? This clears everything you entered."));
   var resetBtn = el("button", "dbtn", "Reset All for a new flight"); resetBtn.id = "resetAll";
   newFlt.appendChild(resetBtn);
+  var wipeBtn = el("button", "dbtn", "Clear ALL data on this device"); wipeBtn.id = "wipeAll"; wipeBtn.style.marginTop = "8px";
+  var stoSt = el("div", "hint", ""); stoSt.style.marginTop = "6px";
+  newFlt.appendChild(wipeBtn); newFlt.appendChild(stoSt);
+  function stoCheck(){
+    try{
+      if(!(navigator.storage && navigator.storage.persisted)){ stoSt.textContent = ""; return; }
+      navigator.storage.persisted().then(function(ok){
+        if(ok) return true;
+        return navigator.storage.persist ? navigator.storage.persist() : false;
+      }).then(function(ok){
+        stoSt.textContent = ok ? "Storage: protected. This device will keep your entries." : "Storage: not guaranteed. Add the app to your Home Screen so the device keeps your entries.";
+      }).catch(function(){});
+    }catch(e){}
+  }
+  stoCheck();
+  wipeBtn.addEventListener("click", function(){
+    if(!window.confirm("Clear ALL data on this device?\n\nThis deletes every entry, the saved flight plan PDFs, recent flights and settings (including airplane, ETOPS and theme). It cannot be undone. The app itself stays installed and works offline.")) return;
+    try{ localStorage.clear(); }catch(e){}
+    try{ sessionStorage.clear(); }catch(e){}
+    var done = function(){ location.reload(); };
+    try{
+      var rq = indexedDB.deleteDatabase("navlog-pdf");
+      rq.onsuccess = rq.onerror = rq.onblocked = done;
+      setTimeout(done, 1500);
+    }catch(e){ done(); }
+  });
   viewPre.appendChild(newFlt);
   resetBtn.addEventListener("click", function(){
     if(!window.confirm("Reset ALL for a new flight?\n\nThis clears the ORCA checks, flight number, route and times, FMS data, critical fuel, FMC EO values, HF frequencies, fuel ladder, bingo fuel, time fields and the loaded Nav Log with its ATA and fuel entries.\n\nAirplane and ETOPS selections are kept.")) return;
