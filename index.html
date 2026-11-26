@@ -320,7 +320,7 @@
     <div class="fb"><span>ON</span><b id="fbOn">----</b></div>
     <div class="fb"><span>IN</span><b id="fbIn">----</b></div>
   </div>
-  <label class="flt"><span>INFO</span><input id="flt" type="text" maxlength="12" placeholder="Flight info" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight info"></label>
+  <label class="flt"><span>INFO</span><input id="flt" type="text" maxlength="12" placeholder="---" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight info"></label>
   <div class="pill wait" id="status" role="status">CHECKING…</div>
 </div>
 
@@ -1009,13 +1009,13 @@
 
     // ── flight card ──
     var C = mkCard("Flight");
-    var fltIn = inp({ maxlength: "12", autocapitalize: "characters", "aria-label": "Flight number", placeholder: "UA 123" });
-    var depIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Departure", placeholder: "KDEN" });
-    var arrIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Arrival", placeholder: "KLAX" });
+    var fltIn = inp({ maxlength: "12", autocapitalize: "characters", "aria-label": "Flight number", placeholder: "---" });
+    var depIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Departure", placeholder: "---" });
+    var arrIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Arrival", placeholder: "---" });
     var tIn = {};
     var TL = [["out", "OUT (Z)"], ["off", "OFF (Z)"], ["on", "ON (Z)"], ["inn", "IN (Z)"]];
     TL.forEach(function(x){
-      tIn[x[0]] = inp({ inputmode: "numeric", maxlength: "4", placeholder: "hhmm", "aria-label": x[1] });
+      tIn[x[0]] = inp({ inputmode: "numeric", maxlength: "4", placeholder: "---", "aria-label": x[1] });
     });
     depIn.value = r.dep; arrIn.value = r.arr;
     TL.forEach(function(x){ tIn[x[0]].value = r[x[0]]; });
@@ -1039,8 +1039,8 @@
     C.body.appendChild(rowB);
     var rowC = el("div", "row2"); rowC.appendChild(field(TL[2][1], tIn.on)); rowC.appendChild(field(TL[3][1], tIn.inn));
     C.body.appendChild(rowC);
-    var DI = inp({ inputmode: "numeric", placeholder: "nm", maxlength: "5", "aria-label": "Distance, nm" });
-    var TM = inp({ placeholder: "H:MM", maxlength: "6", "aria-label": "Flight time" });
+    var DI = inp({ inputmode: "numeric", placeholder: "---", maxlength: "5", "aria-label": "Distance, nm" });
+    var TM = inp({ placeholder: "---", maxlength: "6", "aria-label": "Flight time" });
     DI.value = f.dist; TM.value = f.time;
         function mkRoute(){
       var t = tile("neu", "Route");
@@ -1063,9 +1063,9 @@
 
     // ── FMS data card ──
     var F = mkCard("FMS Data");
-    var ZF = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "ZFW, k lb" });
-    var RS = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "Reserves, k lb" });
-    var CZ = inp({ placeholder: "FL350", maxlength: "6", autocapitalize: "characters", "aria-label": "Cruise altitude" });
+    var ZF = inp({ inputmode: "decimal", placeholder: "---", "aria-label": "ZFW, k lb" });
+    var RS = inp({ inputmode: "decimal", placeholder: "---", "aria-label": "Reserves, k lb" });
+    var CZ = inp({ placeholder: "---", maxlength: "6", autocapitalize: "characters", "aria-label": "Cruise altitude" });
     var CI = inp({ inputmode: "numeric", placeholder: "CI", maxlength: "4", "aria-label": "Cost index" });
     var DF = inp({ placeholder: "+0.0/+0.0", maxlength: "12", "aria-label": "Drag and fuel flow factors" });
     var map = { zfw: ZF, rsv: RS, crz: CZ, ci: CI, df: DF, dist: DI, time: TM };
@@ -1256,8 +1256,8 @@
     })();
 
     // ── airports card ──
-    var enIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "" });
-    var exIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "" });
+    var enIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "---" });
+    var exIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "---" });
     var row = el("div", "row2");
     row.appendChild(field("ETOPS entry airport", enIn));
     row.appendChild(field("ETOPS exit airport", exIn));
@@ -1335,9 +1335,9 @@
         var rm = el("button", "dbtn small", "Remove"); hd.appendChild(rm);
         blk.appendChild(hd);
         var bd = el("div", "altbody");
-        var ic = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "ICAO", "aria-label": "Alternate " + (i + 1) + " airport" }); ic.value = a.ic;
-        var f1 = inp({ inputmode: "numeric", maxlength: "4", placeholder: "hhmm", "aria-label": "Alternate " + (i + 1) + " legal from, Zulu" }); f1.value = a.from;
-        var f2 = inp({ inputmode: "numeric", maxlength: "4", placeholder: "hhmm", "aria-label": "Alternate " + (i + 1) + " legal to, Zulu" }); f2.value = a.to;
+        var ic = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "---", "aria-label": "Alternate " + (i + 1) + " airport" }); ic.value = a.ic;
+        var f1 = inp({ inputmode: "numeric", maxlength: "4", placeholder: "---", "aria-label": "Alternate " + (i + 1) + " legal from, Zulu" }); f1.value = a.from;
+        var f2 = inp({ inputmode: "numeric", maxlength: "4", placeholder: "---", "aria-label": "Alternate " + (i + 1) + " legal to, Zulu" }); f2.value = a.to;
         bd.appendChild(field("Airport", ic));
         bd.appendChild(field("Legal from (Z)", f1));
         bd.appendChild(field("Legal to (Z)", f2));
@@ -1405,8 +1405,8 @@
 
         // position (for Jepp)
         var pos = el("div", "posrow");
-        var lat = inp({ placeholder: "", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " latitude" }); lat.value = c.lat;
-        var lon = inp({ placeholder: "", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " longitude" }); lon.value = c.lon;
+        var lat = inp({ placeholder: "---", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " latitude" }); lat.value = c.lat;
+        var lon = inp({ placeholder: "---", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " longitude" }); lon.value = c.lon;
         var cp = el("button", "btn big", "Copy"), ps = el("button", "btn big", "Paste");
         pos.appendChild(field("Latitude", lat)); pos.appendChild(field("Longitude", lon));
         var pb = el("div", "posbtns"); pb.appendChild(cp); pb.appendChild(ps); pos.appendChild(pb);
@@ -1414,15 +1414,15 @@
 
         // alternates for this CP
         var ab = el("div", "row2");
-        var a1 = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "ICAO", "aria-label": "CP-" + (i + 1) + " alternate 1" }); a1.value = c.a1;
-        var a2 = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "ICAO", "aria-label": "CP-" + (i + 1) + " alternate 2" }); a2.value = c.a2;
+        var a1 = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "---", "aria-label": "CP-" + (i + 1) + " alternate 1" }); a1.value = c.a1;
+        var a2 = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "---", "aria-label": "CP-" + (i + 1) + " alternate 2" }); a2.value = c.a2;
         ab.appendChild(field("ETOPS alternate 1", a1)); ab.appendChild(field("ETOPS alternate 2", a2));
         blk.appendChild(ab);
 
         // fuel
         var bd = el("div", "row2 cpbody");
-        var fr = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "CP-" + (i + 1) + " fuel remaining" }); fr.value = c.fr;
-        var rq = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": "CP-" + (i + 1) + " fuel required" }); rq.value = c.rq;
+        var fr = inp({ inputmode: "decimal", placeholder: "---", "aria-label": "CP-" + (i + 1) + " fuel remaining" }); fr.value = c.fr;
+        var rq = inp({ inputmode: "decimal", placeholder: "---", "aria-label": "CP-" + (i + 1) + " fuel required" }); rq.value = c.rq;
         rq.classList.add("req");
         var lf = field("Fuel remaining (k lb)", fr), lr = field("Fuel required (k lb)", rq);
         lr.classList.add("req");
@@ -1522,8 +1522,8 @@
   // ═══════════ 3) TIME REMAINING ═══════════
   (function(){
     var C = mkCard("Time Remaining");
-    var land = inp({ inputmode: "numeric", maxlength: "4", placeholder: "HHMM" });
-    var cur  = inp({ inputmode: "numeric", maxlength: "4", placeholder: "HHMM" });
+    var land = inp({ inputmode: "numeric", maxlength: "4", placeholder: "---" });
+    var cur  = inp({ inputmode: "numeric", maxlength: "4", placeholder: "---" });
     var row = el("div", "row2");
     row.appendChild(field("Planned landing (UTC)", land));
     row.appendChild(field("Current time (UTC)", cur));
@@ -1601,8 +1601,8 @@
         if(typeof o.t === "number") t = o.t;
       }
     })();
-    var sIn = inp({ inputmode: "decimal", placeholder: "speed" });
-    var aIn = inp({ inputmode: "decimal", placeholder: "altitude" });
+    var sIn = inp({ inputmode: "decimal", placeholder: "---" });
+    var aIn = inp({ inputmode: "decimal", placeholder: "---" });
     var row = el("div", "eorow");
     var l1 = el("span", "eolab", "FMC EO SPD"), l2 = el("span", "eolab", "ALT");
     row.appendChild(l1); row.appendChild(sIn); row.appendChild(l2); row.appendChild(aIn);
@@ -1660,8 +1660,8 @@
     rows.forEach(function(r, k){
       var line = el("div", "hfrow");
       line.appendChild(el("span", "hfn", String(k + 1)));
-      var p = inp({ inputmode: "numeric", placeholder: "Primary (kHz)", "aria-label": "HF " + (k + 1) + " primary kHz" });
-      var s = inp({ inputmode: "numeric", placeholder: "Secondary (kHz)", "aria-label": "HF " + (k + 1) + " secondary kHz" });
+      var p = inp({ inputmode: "numeric", placeholder: "---", "aria-label": "HF " + (k + 1) + " primary kHz" });
+      var s = inp({ inputmode: "numeric", placeholder: "---", "aria-label": "HF " + (k + 1) + " secondary kHz" });
       var sw = el("div", "hfsw");
       sw.appendChild(el("span", "hfat", "@"));
       var w = inp({ placeholder: "Switch-over (fix, longitude or time)", "aria-label": "HF " + (k + 1) + " switch-over point" });
@@ -1722,7 +1722,7 @@
     LAB.forEach(function(name, i){
       var r = el("div", "rung");
       r.appendChild(el("span", "rl", name));
-      var f = inp({ inputmode: "decimal", placeholder: "k lb", "aria-label": name + " fuel, k lb" });
+      var f = inp({ inputmode: "decimal", placeholder: "---", "aria-label": name + " fuel, k lb" });
       f.value = vals[i];
       r.appendChild(f); ladder.appendChild(r); ins.push(f);
       f.addEventListener("input", function(){ vals[i] = f.value; persist(); });
@@ -1770,7 +1770,7 @@
       var row = el("div", "row2");
       for(var c = 0; c < 2 && r * 2 + c < KEYS.length; c++){
         var k = KEYS[r * 2 + c];
-        var f = inp({ inputmode: "decimal", placeholder: "k lb" });
+        var f = inp({ inputmode: "decimal", placeholder: "---" });
         f.value = d[k]; ins[k] = f;
         row.appendChild(field(LABELS[r * 2 + c], f));
       }

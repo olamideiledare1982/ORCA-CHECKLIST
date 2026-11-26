@@ -211,7 +211,7 @@ function wpRow(w, ro) {
     '<div class="c-mach"><div class="big">' + mach + '</div></div>' +
     '<div class="c-gs"><span class="lab">GS / TAS</span>' + gsTas + '</div>' +
     '<div class="c-fuel"><span class="lab">Fuel / Burn</span><div class="big">' + fmtN(w.fuel) + '</div><div class="sm">' + (w.zbo ? '−' + fmtN(w.zbo) : '') + '</div></div>' +
-    '<div class="c-act">' + (ro ? '' : '<span class="lab">Fuel actual</span><div class="actwrap"><input type="text" class="t4" inputmode="decimal" maxlength="6" placeholder="k lb" data-fuel="' + i + '"><div class="delta" data-df></div></div>') + '</div>' +
+    '<div class="c-act">' + (ro ? '' : '<span class="lab">Fuel actual</span><div class="actwrap"><input type="text" class="t4" inputmode="decimal" maxlength="6" placeholder="---" data-fuel="' + i + '"><div class="delta" data-df></div></div>') + '</div>' +
     (ro ? '' : '<button class="notebtn" data-note="' + i + '" title="Note">✎</button>') +
     '</div>';
   return h;
@@ -220,7 +220,7 @@ function evRow(e, ro) {
   var id = e._id;
   if (e.type === 'fir') {
     return '<div class="ev fir"><span class="ic">◇</span><span>ENTERING FIR <b>' + esc(e.icao) + '</b> ' + esc(e.name) + ' <span style="color:var(--muted)">(' + esc(e.region) + ')</span></span>' +
-      (ro ? '' : '<input type="text" placeholder="freq / note" data-txt="' + id + '" value="' + esc((ST.txt || {})[id] || '') + '">') + '</div>';
+      (ro ? '' : '<input type="text" placeholder="---" data-txt="' + id + '" value="' + esc((ST.txt || {})[id] || '') + '">') + '</div>';
   }
   if (e.type === 'etops') {
     return '<div class="ev etops"><span class="ic">▲</span><span class="tag" style="color:var(--good)">ETOPS ' + esc(e.kind) + '</span><b class="mono">' + esc(e.apt) + '</b>' +
