@@ -943,6 +943,7 @@
     try{ window.nlLoadFile(fl); }
     catch(e){ clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not start: " + (e && e.message ? e.message : e); }
   });
+  window.addEventListener("navlogask", function(){ var nb = document.getElementById("nav-nav"); if(nb) nb.click(); });
   window.addEventListener("navlogerror", function(ev){
     clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not read that PDF: " + ev.detail;
   });
@@ -1246,8 +1247,8 @@
     })();
 
     // ── airports card ──
-    var enIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "e.g. KDEN" });
-    var exIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "e.g. EGLL" });
+    var enIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "" });
+    var exIn = inp({ maxlength: "5", autocapitalize: "characters", placeholder: "" });
     var row = el("div", "row2");
     row.appendChild(field("ETOPS entry airport", enIn));
     row.appendChild(field("ETOPS exit airport", exIn));
@@ -1395,8 +1396,8 @@
 
         // position (for Jepp)
         var pos = el("div", "posrow");
-        var lat = inp({ placeholder: "N45 30.0", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " latitude" }); lat.value = c.lat;
-        var lon = inp({ placeholder: "W040 00.0", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " longitude" }); lon.value = c.lon;
+        var lat = inp({ placeholder: "", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " latitude" }); lat.value = c.lat;
+        var lon = inp({ placeholder: "", maxlength: "20", autocapitalize: "characters", "aria-label": "CP-" + (i + 1) + " longitude" }); lon.value = c.lon;
         var cp = el("button", "btn big", "Copy"), ps = el("button", "btn big", "Paste");
         pos.appendChild(field("Latitude", lat)); pos.appendChild(field("Longitude", lon));
         var pb = el("div", "posbtns"); pb.appendChild(cp); pb.appendChild(ps); pos.appendChild(pb);
