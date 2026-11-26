@@ -926,7 +926,10 @@
   ofpTx.appendChild(ofpSt);
   var ofpBtn = el("button", "btn big", "Choose PDF");
   var ofpFile = document.createElement("input"); ofpFile.type = "file"; ofpFile.accept = "application/pdf,.pdf,application/octet-stream"; ofpFile.className = "ofpfile";
-  ofpBar.appendChild(ofpTx); ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpFile);
+  var ofpView = el("button", "btn big", "View PDF"); ofpView.hidden = true; ofpView.style.background = "transparent"; ofpView.style.border = "1px solid var(--border2)";
+  ofpBar.appendChild(ofpTx); ofpBar.appendChild(ofpView); ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpFile);
+  ofpView.addEventListener("click", function(){ ensureNav(); var nb = document.getElementById("nav-nav"); if(nb) nb.click(); window.NavLog.viewPdf(); });
+  window.refreshOfpView = function(){ try{ if(!navMounted){ ofpView.hidden = true; return; } window.NavLog.hasPdf().then(function(ok){ ofpView.hidden = !ok; }); }catch(e){ ofpView.hidden = true; } };
   viewPre.appendChild(ofpBar);
   ofpBtn.addEventListener("click", function(){ ofpFile.value = ""; ofpFile.click(); });
   ofpFile.addEventListener("change", function(){
@@ -945,6 +948,7 @@
   });
   window.addEventListener("navlogloaded", function(ev){
     clearTimeout(window.nlTimer);
+    setTimeout(function(){ if(window.refreshOfpView) window.refreshOfpView(); }, 50);
     var d = ev.detail, h = d.h || {}, fm = d.fms || {}, rt = d.routing || {};
     var chk = d.checks ? " · parse " + d.checks[0] + "/" + d.checks[1] : "";
     var cs = String(h.callsign || ""), m = /^([A-Z]{3})(\d+)/.exec(cs);
@@ -1885,6 +1889,7 @@
     if(window.orcaResetChecks) window.orcaResetChecks();
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
     try{ if(navMounted) window.NavLog.reset(); }catch(e){}
+    try{ indexedDB.deleteDatabase("navlog-pdf"); }catch(e){} ofpView.hidden = true;
     ofpSt.className = "ofps"; ofpSt.textContent = "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in. FMS data you type yourself.";
     refreshStale();
   });

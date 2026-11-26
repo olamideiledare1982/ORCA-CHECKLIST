@@ -2,7 +2,7 @@
 (function () {
 'use strict';
 var CSS = ":host{\n  color-scheme:dark;\n  --bg:#0b1118; --panel:#121b26; --panel2:#182534; --line:#233245; --text:#e7eef6; --muted:#8fa3b8;\n  --accent:#4cc3ff; --accent-bg:rgba(76,195,255,.12); --good:#3ddc97; --warn:#ffb454; --bad:#ff6b6b; --pass:#5d7189;\n  --mono:ui-monospace,\"SF Mono\",Menlo,Consolas,\"Liberation Mono\",monospace;\n  --sans:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;\n}\n:host([data-theme=\"light\"]){\n  color-scheme:light;\n  --bg:#eef2f7; --panel:#ffffff; --panel2:#f4f7fb; --line:#d5dde8; --text:#0f1b2a; --muted:#5a6b80;\n  --accent:#0a74c9; --accent-bg:rgba(10,116,201,.10); --good:#13875a; --warn:#b36b00; --bad:#c62d2d; --pass:#8a98a9;\n}\n*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}\n:host{display:block;margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.35;-webkit-user-select:text;user-select:text}\ninput,textarea,select{-webkit-user-select:text;user-select:text}\n.nl{padding-bottom:env(safe-area-inset-bottom)}\nbutton,input,select,textarea{font:inherit;color:inherit}\nbutton{cursor:pointer}\n.mono{font-family:var(--mono)}\n.hide{display:none!important}\n\n/* top bar */\n#top{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);padding:0 12px 0}\n.bar{display:flex;align-items:center;gap:10px;min-height:52px;flex-wrap:wrap;padding:6px 0}\n.brand{font-weight:700;letter-spacing:.04em;font-size:13px;color:var(--accent);text-transform:uppercase}\n.flt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;flex:1;min-width:200px}\n.flt b{font-size:19px;font-family:var(--mono)}\n.flt .rt{font-family:var(--mono);font-size:16px}\n.flt .sub{color:var(--muted);font-size:13px}\n.zulu{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent);min-width:78px;text-align:right}\n.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:40px;font-size:14px}\n.btn:active{filter:brightness(1.2)}\n.btn.primary{background:var(--accent);border-color:var(--accent);color:#04121c;font-weight:700}\n.btn.small{min-height:32px;padding:4px 10px;font-size:13px;border-radius:8px}\n.chk-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:999px;padding:3px 10px;border:1px solid var(--line);background:var(--panel2);cursor:pointer}\n.chk-pill.ok{color:var(--good);border-color:color-mix(in srgb,var(--good) 50%,transparent)}\n.chk-pill.bad{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 60%,transparent)}\nnav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 8px}\nnav.tabs::-webkit-scrollbar{display:none}\nnav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;color:var(--muted);font-weight:600;white-space:nowrap;font-size:14px}\nnav.tabs button.on{color:var(--text);border-bottom-color:var(--accent)}\n\nmain{padding:12px;max-width:1500px;margin:0 auto}\n\n/* empty state */\n#empty{max-width:640px;margin:8vh auto;text-align:center;padding:0 16px}\n#empty h1{font-size:26px;margin:0 0 6px}\n#empty p{color:var(--muted);margin:6px 0}\n.drop{border:2px dashed var(--line);border-radius:18px;padding:34px 18px;margin:20px 0;background:var(--panel);transition:.15s}\n.drop.over{border-color:var(--accent);background:var(--accent-bg)}\n.drop .ic{font-size:40px}\n.recent{text-align:left;margin-top:18px}\n.recent h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}\n.recent button{display:flex;width:100%;justify-content:space-between;align-items:center;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px}\n.recent .t{font-family:var(--mono)}\n.recent .d{color:var(--muted);font-size:12px}\n#busy{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100}\n#busy div{background:var(--panel);border:1px solid var(--line);padding:20px 26px;border-radius:14px;font-weight:600}\n.err{background:color-mix(in srgb,var(--bad) 14%,var(--panel));border:1px solid var(--bad);border-radius:12px;padding:12px 14px;margin:12px 0;text-align:left}\n.warnbox{background:color-mix(in srgb,var(--warn) 14%,var(--panel));border:1px solid var(--warn);border-radius:12px;padding:10px 14px;margin:0 0 12px}\n\n/* summary strip */\n.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}\n.sum>div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-height:62px}\n.sum .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}\n.sum .v{font-family:var(--mono);font-size:21px;font-weight:700;margin-top:2px}\n.sum .s{font-size:12px;color:var(--muted);font-family:var(--mono)}\n.sum .next{grid-column:span 2;border-color:var(--accent);background:var(--accent-bg)}\n.early{color:var(--accent)} .late{color:var(--warn)} .good{color:var(--good)} .bad{color:var(--bad)}\n.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px}\n.ctl label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}\n.ctl input[type=text]{width:70px}\ninput[type=text],textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-height:34px;width:100%;outline:none}\ninput[type=text]:focus,textarea:focus{border-color:var(--accent)}\ninput.t4{font-family:var(--mono);text-align:center;letter-spacing:.04em;padding:6px 2px}\n.tog{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;user-select:none}\n.tog.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}\n\n/* nav log grid */\n.navwrap{background:var(--panel);border:1px solid var(--line);border-radius:14px}\n.wp,.hdr{display:grid;align-items:center;column-gap:6px;padding:6px 10px;\n  grid-template-columns:46px 54px minmax(150px,1.3fr) 56px 66px 58px 70px 70px 52px 56px 64px 82px 78px 84px;\n  grid-template-areas:\"chk awy name crs dist et eta ata fl mach gs wind fuel act\"}\n.hdr{position:sticky;top:var(--hdrh,96px);z-index:5;background:var(--panel2);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);padding-top:8px;padding-bottom:8px;border-radius:13px 13px 0 0}\n.hdr>div{line-height:1.15}\n.hdr small{display:block;text-transform:none;letter-spacing:0;opacity:.8}\n.c-chk{grid-area:chk}.c-awy{grid-area:awy}.c-name{grid-area:name}.c-crs{grid-area:crs}.c-dist{grid-area:dist}.c-et{grid-area:et}\n.c-eta{grid-area:eta}.c-ata{grid-area:ata}.c-fl{grid-area:fl}.c-mach{grid-area:mach}.c-gs{grid-area:gs}.c-wind{grid-area:wind}\n.c-fuel{grid-area:fuel}.c-act{grid-area:act}\n.wp{border-bottom:1px solid var(--line);min-height:58px;position:relative}\n.wp:last-child{border-bottom:0}\n.wp .big{font-family:var(--mono);font-size:15px;font-weight:600}\n.wp .sm{font-family:var(--mono);font-size:11.5px;color:var(--muted)}\n.wp .lab{display:none}\n.nm{font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:.02em}\n.nm .ex{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px}\n.desc{font-size:12px;color:var(--muted)}\n.awy{font-family:var(--mono);font-size:12.5px;color:var(--accent);font-weight:600}\n.pos{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.01em}\n.wp.pseudo{background:var(--panel2);min-height:44px}\n.susp{font-size:11.5px;line-height:1.3;color:var(--warn);margin-top:3px}\n.wp:has(.susp){box-shadow:inset 3px 0 0 var(--warn)}\n.wp.pseudo .nm{font-size:14px;color:var(--muted)}\n.wp.passed{opacity:.5}\n.wp.passed .nm{text-decoration:line-through;text-decoration-color:var(--pass)}\n.wp.next{background:var(--accent-bg);box-shadow:inset 4px 0 0 var(--accent)}\n.passbtn{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:18px;color:transparent;padding:0}\n.wp.next .passbtn{border-color:var(--accent)}\n.wp.passed .passbtn{background:var(--good);border-color:var(--good);color:#04180f}\n.phase{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}\n.phase.clb{color:var(--good)} .phase.dsc{color:var(--warn)}\n.flchg{color:var(--warn)}\n.eta .big{color:var(--accent)}\n.delta{font-family:var(--mono);font-size:11.5px}\n.wp input.t4{width:100%}\n.actwrap{display:flex;flex-direction:column;gap:2px}\n.notebtn{position:absolute;right:4px;top:3px;background:none;border:0;color:var(--muted);font-size:13px;padding:2px 6px;opacity:.6}\n.notebtn.has{color:var(--warn);opacity:1}\n.noterow{grid-column:1/-1;padding:2px 0 4px 50px}\n.noterow input{font-size:14px}\n\n/* events */\n.ev{display:flex;gap:10px;align-items:center;padding:7px 12px;border-bottom:1px solid var(--line);font-size:13px;flex-wrap:wrap}\n.ev .ic{width:22px;text-align:center}\n.ev.fir{background:linear-gradient(90deg,rgba(155,120,255,.16),transparent 70%);color:var(--text)}\n.ev.fir b{font-family:var(--mono)}\n.ev.fir input{max-width:150px;margin-left:auto}\n.ev.etops{background:linear-gradient(90deg,rgba(61,220,151,.14),transparent 70%)}\n.ev.cp{background:linear-gradient(90deg,rgba(255,180,84,.16),transparent 70%)}\n.ev.check{background:var(--panel2)}\n.ev label{display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;min-height:30px}\n.ev input[type=checkbox],.cl input[type=checkbox]{width:22px;height:22px;accent-color:var(--good);flex:none}\n.ev .mono{font-size:12px}\n.ev .tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;border-radius:5px;padding:2px 6px;border:1px solid currentColor;text-transform:uppercase}\n.c2{border-bottom:1px solid var(--line);background:linear-gradient(90deg,rgba(255,107,107,.13),transparent 60%);padding:8px 12px}\n.c2 h4{margin:0 0 6px;font-size:13px;letter-spacing:.05em;color:var(--bad)}\n.c2.exit h4{color:var(--warn)}\n.cl{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:2px 16px}\n.cl label{display:flex;align-items:center;gap:10px;min-height:34px;font-size:13px;cursor:pointer}\n.cl .hf{display:flex;gap:8px;align-items:center;grid-column:1/-1;font-size:13px}\n.cl .hf input{max-width:120px}\n.cl label.done span{text-decoration:line-through;color:var(--muted)}\n\n/* cards */\n.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px}\n.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}\n.card.wide{grid-column:1/-1}\n.card h3{margin:0 0 8px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}\ntable.kv{width:100%;border-collapse:collapse;font-size:14px}\ntable.kv td,table.kv th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}\ntable.kv tr:last-child td{border-bottom:0}\ntable.kv td.r,table.kv th.r{text-align:right;font-family:var(--mono)}\ntable.kv th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}\ntable.kv td.k{color:var(--muted);width:42%}\n.big2{font-family:var(--mono);font-size:22px;font-weight:700}\n.chips{display:flex;flex-wrap:wrap;gap:6px}\n.chip{font-family:var(--mono);font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 8px}\n.chip b{color:var(--accent)}\npre.raw{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12.5px;margin:0;line-height:1.5}\n.route{font-family:var(--mono);font-size:14px;line-height:1.7;word-break:break-word;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}\n.lines div{padding:3px 0;border-bottom:1px dashed var(--line);font-size:13.5px}\n.lines div:last-child{border-bottom:0}\n.flag{font-family:var(--mono);font-size:11px;border-radius:4px;padding:1px 5px;background:var(--panel2);border:1px solid var(--line);color:var(--warn)}\nsvg text{font-family:var(--mono)}\n.sec{margin:18px 0 8px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}\n.cps{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px}\n.ok-row{color:var(--good)} .bad-row{color:var(--warn)}\n.fuelbig td.r{font-size:15px}\ntr.hl td{background:var(--accent-bg)}\n.meter{height:8px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:3px}\n.meter i{display:block;height:100%;background:var(--good)}\n\n/* ---- narrower screens ---- */\n@media (max-width:1180px){\n  .wp,.hdr{grid-template-columns:46px 50px minmax(130px,1.2fr) 52px 62px 54px 66px 68px 50px 62px 78px 76px 80px;\n    grid-template-areas:\"chk awy name crs dist et eta ata fl gs wind fuel act\"}\n  .c-mach{display:none}\n}\n@media (max-width:860px){\n  .hdr{display:none}\n  .wp{grid-template-columns:46px repeat(5,minmax(0,1fr));row-gap:4px;padding:8px 10px;\n    grid-template-areas:\"chk name name crs dist et\" \"chk awy fl gs wind fuel\" \"chk eta ata ata act act\"}\n  .wp.pseudo{grid-template-areas:\"chk name name crs dist et\" \"chk awy fl gs wind fuel\" \"chk eta . . . .\"}\n  .wp.pseudo .c-ata,.wp.pseudo .c-act{display:none}\n  .wp .lab{display:block;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;font-family:var(--sans)}\n  .c-mach{display:none}\n  .noterow{padding-left:50px}\n  .cps{grid-template-columns:1fr}\n}\n@media (max-width:640px){\n  .wp{grid-template-columns:46px repeat(4,1fr);\n    grid-template-areas:\"chk name name name awy\" \"chk crs dist et eta\" \"chk fl gs wind fuel\" \"chk ata ata act act\"}\n  .wp.pseudo{grid-template-areas:\"chk name name name awy\" \"chk crs dist et eta\" \"chk fl gs wind fuel\"}\n  .c-awy{text-align:right}\n  .sum .next{grid-column:1/-1}\n}\n@media (max-width:520px){\n  .flt b{font-size:17px}\n  .zulu{font-size:17px}\n  .brand{display:none}\n}\n.brand,.flt b,.flt .rt{display:none}\n";
-var HTML = "<div id=\"top\" class=\"hide\">\n  <div class=\"bar\">\n    <span class=\"brand\">Nav Log</span>\n    <div class=\"flt\" id=\"fltInfo\"></div>\n    <span id=\"chkPill\" class=\"chk-pill\"></span>\n    <span class=\"zulu\" id=\"zulu\">----Z</span>\n    <button class=\"btn primary\" id=\"btnOpen\">Open PDF</button>\n    <button class=\"btn\" id=\"btnTheme\" title=\"Day / night\">&#9728;</button>\n  </div>\n  <nav class=\"tabs\" id=\"tabs\"></nav>\n</div>\n<main id=\"main\">\n  <div id=\"empty\">\n    <h1>Digital Nav Log</h1>\n    <p>Load a United flight plan PDF and it becomes an interactive nav log.</p>\n    <div class=\"drop\" id=\"drop\">\n      <div class=\"ic\">\u2708\ufe0e</div>\n      <p style=\"color:var(--text);font-weight:600;margin:6px 0\">Drop the flight plan PDF here</p>\n      <p>or</p>\n      <button class=\"btn primary\" id=\"btnChoose\">Choose PDF\u2026</button>\n      <p style=\"font-size:12px;margin-top:14px\">Reads the OPERATIONAL FLIGHTPLAN pages from the briefing package. The file never leaves this device.</p>\n    </div>\n    <div id=\"emptyErr\"></div>\n    <div class=\"recent\" id=\"recent\"></div>\n  </div>\n  <div id=\"view\" class=\"hide\"></div>\n</main>\n<input type=\"file\" id=\"file\" accept=\"application/pdf,.pdf\" class=\"hide\">\n<div id=\"busy\" class=\"hide\"><div id=\"busyMsg\">Reading\u2026</div></div>";
+var HTML = "<div id=\"top\" class=\"hide\">\n  <div class=\"bar\">\n    <span class=\"brand\">Nav Log</span>\n    <div class=\"flt\" id=\"fltInfo\"></div>\n    <span id=\"chkPill\" class=\"chk-pill\"></span>\n    <span class=\"zulu\" id=\"zulu\">----Z</span>\n    <button class=\"btn primary\" id=\"btnOpen\">Load PDF</button>\n    <button class=\"btn\" id=\"btnView\" hidden>View PDF</button>\n    <button class=\"btn\" id=\"btnTheme\" title=\"Day / night\">&#9728;</button>\n  </div>\n  <nav class=\"tabs\" id=\"tabs\"></nav>\n</div>\n<main id=\"main\">\n  <div id=\"empty\">\n    <h1>Digital Nav Log</h1>\n    <p>Load a United flight plan PDF and it becomes an interactive nav log.</p>\n    <div class=\"drop\" id=\"drop\">\n      <div class=\"ic\">\u2708\ufe0e</div>\n      <p style=\"color:var(--text);font-weight:600;margin:6px 0\">Drop the flight plan PDF here</p>\n      <p>or</p>\n      <button class=\"btn primary\" id=\"btnChoose\">Choose PDF\u2026</button>\n      <p style=\"font-size:12px;margin-top:14px\">Reads the OPERATIONAL FLIGHTPLAN pages from the briefing package. The file never leaves this device.</p>\n    </div>\n    <div id=\"emptyErr\"></div>\n    <div class=\"recent\" id=\"recent\"></div>\n  </div>\n  <div id=\"view\" class=\"hide\"></div>\n</main>\n<input type=\"file\" id=\"file\" accept=\"application/pdf,.pdf\" class=\"hide\">\n<div id=\"busy\" class=\"hide\"><div id=\"busyMsg\">Reading\u2026</div></div>";
 var api = {};
 var mounted = false;
 api.mount = function (host) {
@@ -19,6 +19,14 @@ var store = {
   get: function (k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
   del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+var pdfdb = {
+  open: function () { return new Promise(function (res, rej) { try { var r = indexedDB.open('navlog-pdf', 1); r.onupgradeneeded = function () { r.result.createObjectStore('pdf'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; } catch (e) { rej(e); } }); },
+  tx: function (mode, fn) { return pdfdb.open().then(function (db) { return new Promise(function (res, rej) { var t = db.transaction('pdf', mode), st = t.objectStore('pdf'), out = fn(st); t.oncomplete = function () { db.close(); res(out && out.result); }; t.onerror = t.onabort = function () { db.close(); rej(t.error); }; }); }); },
+  put: function (k, v) { return pdfdb.tx('readwrite', function (st) { return st.put(v, k); }); },
+  get: function (k) { return pdfdb.tx('readonly', function (st) { return st.get(k); }); },
+  del: function (k) { return pdfdb.tx('readwrite', function (st) { return st.delete(k); }); },
+  clear: function () { return pdfdb.tx('readwrite', function (st) { return st.clear(); }); }
 };
 function pad(n, l) { return String(n).padStart(l || 2, '0'); }
 function fmtZ(min) { min = ((Math.round(min) % 1440) + 1440) % 1440; return pad(Math.floor(min / 60)) + pad(min % 60) + 'Z'; }
@@ -67,12 +75,13 @@ function setFlight(parsed, persist) {
   F.navlogs.forEach(function (log) {
     log.events.forEach(function (e, i) { e._id = log._n + ':' + i; });
   });
+  updView();
   F.navlogs[0].events.forEach(function (e, i) { if (e.type === 'wp') { wpIndex[i] = W.length; e._w = W.length; W.push(e); } });
   if (persist) {
     var rec = store.get('navlog:recent') || [];
     rec = rec.filter(function (r) { return r.key !== KEY; });
     rec.unshift({ key: KEY, title: F.header.callsign + '  ' + F.header.dep.icao + '→' + F.header.arr.icao, date: F.header.dateLocal, saved: Date.now(), type: F.header.type, tail: F.header.tail });
-    rec.slice(5).forEach(function (r) { store.del('navlog:f:' + r.key); store.del('navlog:s:' + r.key); });
+    rec.slice(5).forEach(function (r) { store.del('navlog:f:' + r.key); store.del('navlog:s:' + r.key); pdfdb.del(r.key).catch(function () {}); });
     rec = rec.slice(0, 5);
     store.set('navlog:f:' + KEY, F); store.set('navlog:recent', rec);
     saveState();
@@ -133,6 +142,7 @@ function showApp() {
   renderTop(); renderTab(); host.scrollTo(0, 0);
 }
 function showEmpty(err) {
+  try { var vb = $('#btnView'); if (vb) vb.hidden = true; } catch (e0) {}
   $('#top').classList.add('hide'); $('#view').classList.add('hide'); $('#empty').classList.remove('hide');
   $('#emptyErr').innerHTML = err ? '<div class="err"><b>Couldn’t read that file.</b><br>' + esc(err) + '</div>' : '';
   var rec = store.get('navlog:recent') || [];
@@ -627,7 +637,7 @@ async function loadPdf(file) {
   try {
     busy('Opening ' + file.name + '…');
     await ensureLibs();
-    var buf = new Uint8Array(await file.arrayBuffer());
+    var raw = await file.arrayBuffer(); var keep = raw.slice(0); var buf = new Uint8Array(raw);
     var doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
     var pages = [], sawOFP = false;
     for (var i = 1; i <= doc.numPages; i++) {
@@ -645,6 +655,7 @@ async function loadPdf(file) {
     parsed.navlogs.forEach(function (l, n) { l._n = n; });
     busy(null);
     TAB = 'nav';
+    try { await pdfdb.put(flightKey(parsed), { buf: keep, name: file.name, saved: Date.now() }); } catch (e3) {}
     setFlight(parsed, true);
   } catch (err) {
     busy(null);
@@ -663,7 +674,7 @@ function openRecent(key) {
 
 /* ======================= events ======================= */
 root.addEventListener('click', function (e) {
-  var t = e.target.closest('[data-pass],[data-tab],[data-opt],[data-note],[data-recent],[data-copy],#btnOpen,#btnChoose,#btnTheme,#chkPill,#offNow,#offPlan,#jumpNext,#clearEntries,#delFlight');
+  var t = e.target.closest('[data-pass],[data-tab],[data-opt],[data-note],[data-recent],[data-copy],#btnOpen,#btnChoose,#btnView,#btnTheme,#chkPill,#offNow,#offPlan,#jumpNext,#clearEntries,#delFlight');
   if (!t) return;
   if (t.dataset.pass != null) { togglePass(+t.dataset.pass); return; }
   if (t.dataset.tab) { TAB = t.dataset.tab; renderTab(); host.scrollTo(0, 0); return; }
@@ -680,6 +691,7 @@ root.addEventListener('click', function (e) {
   if (t.dataset.recent) { openRecent(t.dataset.recent); return; }
   if (t.dataset.copy) { copyText(t.dataset.copy === 'route' ? F.atc.route : F.atc.field18, t); return; }
   switch (t.id) {
+    case 'btnView': viewPdf(); break;
     case 'btnOpen': case 'btnChoose': $('#file').value = ''; $('#file').click(); break;
     case 'btnTheme': var th = host.dataset.theme === 'light' ? 'dark' : 'light'; host.dataset.theme = th; t.innerHTML = th === 'light' ? '&#9790;' : '&#9728;'; store.set('navlog:theme', th); break;
     case 'chkPill': TAB = 'notes'; renderTab(); host.scrollTo(0, 0); break;
@@ -687,7 +699,7 @@ root.addEventListener('click', function (e) {
     case 'offPlan': ST.off = F.header.offZ; saveState(); $('#offIn').value = ST.off; refreshDynamic(); break;
     case 'jumpNext': var nx = firstOpenIdx(); if (nx >= 0) { var r = $('#w' + nx); if (r) { var off = $('#top').offsetHeight + 60; host.scrollTo({ top: r.getBoundingClientRect().top - host.getBoundingClientRect().top + host.scrollTop - off - 60, behavior: 'smooth' }); } } break;
     case 'clearEntries': if (confirm('Clear all ATA, fuel, checklist ticks and notes for this flight?')) { var off2 = ST.off; ST = newState(); ST.off = off2; saveState(); renderTab(); } break;
-    case 'delFlight': if (confirm('Remove this flight from this device?')) { store.del('navlog:f:' + KEY); store.del('navlog:s:' + KEY); store.set('navlog:recent', (store.get('navlog:recent') || []).filter(function (r) { return r.key !== KEY; })); F = null; ST = null; showEmpty(); } break;
+    case 'delFlight': if (confirm('Remove this flight from this device?')) { pdfdb.del(KEY).catch(function () {}); store.del('navlog:f:' + KEY); store.del('navlog:s:' + KEY); store.set('navlog:recent', (store.get('navlog:recent') || []).filter(function (r) { return r.key !== KEY; })); F = null; ST = null; showEmpty(); } break;
   }
 });
 root.addEventListener('change', function (e) {
@@ -733,7 +745,73 @@ window.addEventListener('resize', function () { host.style.setProperty('--hdrh',
 
 var th0 = store.get('navlog:theme'); if (th0) { host.dataset.theme = th0; }
 // test / integration hook: window.NavLogApp.load(parsedJson)
+
+/* ======================= stored PDF viewer ======================= */
+var vstyle = document.createElement('style');
+vstyle.textContent = '#pv{position:fixed;inset:0;z-index:9999;background:#05090e;display:flex;flex-direction:column}#pv[hidden]{display:none}#pv .pvh{flex:none;display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0d1928;border-bottom:2px solid #004b87;color:#e7eef6;font:700 14px -apple-system,Helvetica,Arial,sans-serif}#pv .pvh span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#pv .pvb{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:10px;text-align:center}#pv canvas{max-width:none;background:#fff;margin:0 auto 12px;display:block}#pv .pvm{color:#8fa3b8;padding:30px;font:14px -apple-system,Helvetica,Arial,sans-serif}';
+root.appendChild(vstyle);
+var pv = document.createElement('div'); pv.id = 'pv'; pv.hidden = true;
+pv.innerHTML = '<div class="pvh"><span id="pvt">PDF</span><button class="btn" id="pvz">Fit width</button><button class="btn primary" id="pvc">Close</button></div><div class="pvb" id="pvb"></div>';
+root.appendChild(pv);
+var pvDoc = null, pvZoom = 1, pvToken = 0;
+var pvIO = null;
+async function pvRender() {
+  var tok = ++pvToken, body = $('#pvb'); body.innerHTML = '';
+  if (pvIO) { pvIO.disconnect(); pvIO = null; }
+  var w = Math.floor((body.clientWidth - 20) * pvZoom), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var p1 = await pvDoc.getPage(1), v1 = p1.getViewport({ scale: 1 }), ph = Math.floor(w * v1.height / v1.width);
+  var slots = [];
+  for (var i = 1; i <= pvDoc.numPages; i++) {
+    var d = document.createElement('div'); d.dataset.pg = i; d.style.cssText = 'width:' + w + 'px;height:' + ph + 'px;margin:0 auto 12px;background:#fff;position:relative';
+    body.appendChild(d); slots.push(d);
+  }
+  var busyPg = {};
+  async function draw(d) {
+    var n = +d.dataset.pg; if (busyPg[n] || d.firstChild) return; busyPg[n] = 1;
+    try {
+      var pg = await pvDoc.getPage(n), vp0 = pg.getViewport({ scale: 1 }), sc = w / vp0.width, vp = pg.getViewport({ scale: sc * dpr });
+      if (tok !== pvToken) return;
+      var cv = document.createElement('canvas'); cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+      cv.style.cssText = 'width:' + w + 'px;height:' + Math.floor(vp.height / dpr) + 'px;display:block';
+      d.style.height = Math.floor(vp.height / dpr) + 'px'; d.appendChild(cv);
+      await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    } catch (e) {  } finally { busyPg[n] = 0; }
+  }
+  pvIO = new IntersectionObserver(function (es) {
+    es.forEach(function (en) {
+      if (en.isIntersecting) draw(en.target);
+      else if (en.target.firstChild && !busyPg[+en.target.dataset.pg]) { var c = en.target.firstChild; c.width = c.height = 1; en.target.removeChild(c); }
+    });
+  }, { root: body, rootMargin: '600px 0px' });
+  slots.forEach(function (d) { pvIO.observe(d); });
+}
+async function viewPdf() {
+  var rec = null;
+  try { rec = KEY ? await pdfdb.get(KEY) : null; } catch (e) {}
+  pv.hidden = false; var body = $('#pvb');
+  if (!rec) { $('#pvt').textContent = 'PDF'; body.innerHTML = '<div class="pvm">The saved PDF is no longer on this device. Load it again with Load PDF.</div>'; return; }
+  $('#pvt').textContent = rec.name || 'Flight plan';
+  body.innerHTML = '<div class="pvm">Opening…</div>';
+  try {
+    await ensureLibs(); pvZoom = 1;
+    pvDoc = await window.pdfjsLib.getDocument({ data: new Uint8Array(rec.buf.slice(0)) }).promise;
+    await pvRender();
+  } catch (e) { body.innerHTML = '<div class="pvm">Could not open the saved PDF: ' + esc(e && e.message || e) + '</div>'; }
+}
+pv.addEventListener('click', function (e) {
+  var id = e.target && e.target.id;
+  if (id === 'pvc') { pv.hidden = true; pvToken++; if (pvIO) { pvIO.disconnect(); pvIO = null; } pvDoc = null; $('#pvb').innerHTML = ''; }
+  else if (id === 'pvz') { if (!pvDoc) return; pvZoom = pvZoom >= 2 ? 1 : pvZoom + 0.5; e.target.textContent = pvZoom === 1 ? 'Fit width' : Math.round(pvZoom * 100) + '%'; pvRender(); }
+});
+function updView() {
+  var b = $('#btnView'); if (!b) return;
+  if (!KEY) { b.hidden = true; return; }
+  var k = KEY; pdfdb.get(k).then(function (r) { if (k === KEY) b.hidden = !r; }).catch(function () { b.hidden = true; });
+}
+api.viewPdf = viewPdf;
+api.hasPdf = function () { return KEY ? pdfdb.get(KEY).then(function (r) { return !!r; }).catch(function () { return false; }) : Promise.resolve(false); };
 api.reset = function () {
+  pdfdb.clear().catch(function () {});
   if (KEY) { store.del('navlog:f:' + KEY); store.del('navlog:s:' + KEY); store.set('navlog:recent', (store.get('navlog:recent') || []).filter(function (r) { return r.key !== KEY; })); }
   F = null; ST = null; KEY = null; showEmpty();
 };
