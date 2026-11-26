@@ -1769,23 +1769,14 @@
     C.body.appendChild(grid);
     var out = tile("neg", "Bingo fuel");
     C.body.appendChild(out);
-    C.body.appendChild(el("div", "hint", "Bingo = (FOB \u2212 fuel at destination) + fuel to ALT + REMF. Fuel at destination from FMC/HOWGOZIT/OFP. Fuel to ALT is the ALTN line of the OFP fuel ladder. REMF is not less than FAR 00:45 (international: FAR 30 \u00d7 1.5). ALT and REMF default to the Fuel Ladder values when left blank. Fuel is in thousands of pounds: type 8.3 for 8,300 lb. FOM 4.40.15."));
+    C.body.appendChild(el("div", "hint", "Bingo = (FOB \u2212 fuel at destination) + fuel to ALT + REMF. Fuel at destination from FMC/HOWGOZIT/OFP. Fuel to ALT is the ALTN line of the OFP fuel ladder. REMF is not less than FAR 00:45 (international: FAR 30 \u00d7 1.5)."));
     var edited = el("div", "edited"); C.body.appendChild(edited);
     var clr = el("button", "dbtn", "Clear bingo"); C.body.appendChild(clr);
     addStale(C.warn, function(){ return t; }, "bingo fuel entries");
     resetters.push(function(){ clr.click(); });
 
-    function eff(k){
-      var own = kNum(d[k]);
-      if(own !== null || d[k].trim()) return own;
-      var lv = k === "alt" ? ladderRef.v[2] : k === "min" ? ladderRef.v[4] : "";
-      return kNum(lv);
-    }
+    function eff(k){ return kNum(d[k]); }
     function show(){
-      ["alt", "min"].forEach(function(k){
-        var lv = k === "alt" ? ladderRef.v[2] : ladderRef.v[4];
-        ins[k].placeholder = kNum(lv) !== null ? lv + " (ladder)" : "k lb";
-      });
       out.v.className = "tv neg";
       var n = ["fob", "dst", "alt", "min"].map(eff);
       if(n.some(function(x){ return x === null; })){ out.v.textContent = "--"; return; }
