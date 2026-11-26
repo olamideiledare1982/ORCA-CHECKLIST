@@ -1108,7 +1108,35 @@
       '<tr><th class="rl">180&deg; Turn</th><td>120 ft<small>36.6 m</small></td><td>141 ft<small>43.0 m</small></td><td>146 ft<small>44.6 m</small></td><td>165 ft<small>50.3 m</small></td></tr>' +
       '</tbody></table></div>' +
       '<div class="dnote">Reference copy of the 757/767 Differences card (19 SEP 25, 756DIFF). Max limit weights in thousands of pounds. The card and the Flight Manual govern.</div>';
-    var dbox = document.createElement("div"); dbox.innerHTML = dh; D.body.appendChild(dbox);
+    var DT = { "752": { n: "757-200", fa: "4", dom: "16 qt", et: "18 qt", gs: "25% N3, 10% N2, EGT&lt;100<sup>1</sup><small>(&ge;15% N3 MM, N2 MM)</small>", cd: "3 min", lim: ["256.0","255.0","198.0","185.4"], ws: "135 ft<small>41.1 m</small>", tn: "120 ft<small>36.6 m</small>" },
+      "753": { n: "757-300", fa: "5", dom: "16 qt", et: "18 qt", gs: "25% N3, 10% N2, EGT&lt;100<sup>1</sup><small>(&ge;15% N3 MM, N2 MM)</small>", cd: "3 min", lim: ["273.5","272.5","224.0","211.7"], ws: "135 ft<small>41.1 m</small>", tn: "141 ft<small>43.0 m</small>" },
+      "763": { n: "767-300", fa: "5", dom: "15 qt", et: "15 qt", gs: "MM N2, &gt;Fuel On Cmd bug", cd: "5 min", lim: ["408.4","407.0","320.0","291.3"], ws: "167 ft<small>50.9 m</small>", tn: "146 ft<small>44.6 m</small>" },
+      "764": { n: "767-400", fa: "6", dom: "16 qt", et: "18 qt", gs: "20% N2<small>(&ge;15% MM)</small>", cd: "3 min", lim: ["451.0","450.0","350.0","330.0"], ws: "171 ft<small>52.0 m</small>", tn: "165 ft<small>50.3 m</small>" } };
+    function oneHTML(id){
+      var t = DT[id]; if(!t) return "";
+      function r(l, v){ return '<tr><th class="rl">' + l + '</th><td>' + v + '</td></tr>'; }
+      return '<div style="overflow-x:auto"><table class="dtab"><colgroup><col style="width:40%"><col style="width:60%"></colgroup><thead><tr><th></th><th>' + id + ' &middot; ' + t.n + '</th></tr></thead><tbody>' +
+        r("Min FAs", t.fa) + r("Dom Oil", t.dom) + r("ETOPS Oil", t.et) + r("Ground Start", t.gs) +
+        r("Warmup<sup>2</sup>", "3 min (shutdown &le;1.5 hr) / 5 min (&gt;1.5 hr)") + r("Cooldown<sup>3</sup>", t.cd) +
+        r("Turbulence", ".78M/290 (&ge;10K) / 250 (&lt;10K)") + '</tbody></table></div>' +
+        '<div class="dnote"><sup>1</sup>Rich until idle if EGT=0 &nbsp; <sup>2</sup>Should for 757 / Rec. for 767 &nbsp; <sup>3</sup>Rec. for all</div>' +
+        '<div style="overflow-x:auto;margin-top:14px"><table class="dtab"><colgroup><col style="width:40%"><col style="width:60%"></colgroup><thead><tr><th>Max Limit</th><th>' + id + '</th></tr></thead><tbody>' +
+        r("Taxi", t.lim[0]) + r("Takeoff", t.lim[1]) + r("Landing", t.lim[2]) + r("ZFW", t.lim[3]) + r("Wingspan", t.ws) + r("180&deg; Turn", t.tn) + '</tbody></table></div>' +
+        '<div class="dnote">Reference copy of the 757/767 Differences card (19 SEP 25, 756DIFF). Max limit weights in thousands of pounds. The card and the Flight Manual govern.</div>';
+    }
+    var dSeg = el("div", "preseg full"); var dMine = el("button", "btn", ""); var dAll = el("button", "btn", "All types"); dSeg.appendChild(dMine); dSeg.appendChild(dAll);
+    var dbox = document.createElement("div"), dwrap = document.createElement("div"), dall = document.createElement("div");
+    dall.innerHTML = dh; D.body.appendChild(dSeg); D.body.appendChild(dbox); dbox.appendChild(dwrap); dbox.appendChild(dall);
+    function dView(){
+      var showAll = lsGet("orca_diff_all") === "1", id = apSel.value;
+      dMine.textContent = "My aircraft (" + id + ")";
+      dMine.setAttribute("aria-pressed", showAll ? "false" : "true"); dAll.setAttribute("aria-pressed", showAll ? "true" : "false");
+      dwrap.innerHTML = oneHTML(id); dwrap.style.display = showAll ? "none" : ""; dall.style.display = showAll ? "" : "none";
+    }
+    dMine.addEventListener("click", function(){ lsSet("orca_diff_all", "0"); dView(); });
+    dAll.addEventListener("click", function(){ lsSet("orca_diff_all", "1"); dView(); });
+    apSel.addEventListener("change", dView); window.addEventListener("apsync", dView);
+    dView();
     D.wrap.classList.add("full"); viewPre.appendChild(D.wrap);
 
     function render(){
