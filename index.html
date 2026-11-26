@@ -236,6 +236,8 @@
   .etp{display:contents}
   .etp[hidden]{display:none !important}
   .etpnav{display:flex;gap:8px;flex-wrap:wrap}
+  .etpnav .btn{flex:1;min-width:140px}
+  .etpnav .btn[aria-pressed="true"]{background:#0b2a47;border-color:#2b9bf0;color:#fff}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
   .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .tile{border-radius:6px;padding:10px 12px;border:1px solid var(--border2);background:var(--head);min-width:0}
@@ -254,6 +256,16 @@
   .tag.pos{color:var(--done);border-color:rgba(0,212,160,.5);background:var(--done-bg)}
   .tag.neg{color:#ff6b6b;border-color:rgba(255,107,107,.6);background:rgba(255,107,107,.08)}
   .btn.big{min-height:44px;font-size:11px;padding:8px 14px}
+  .dtab{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed}
+  .dtab th,.dtab td{border:1px solid var(--border2);padding:8px 6px;text-align:center;vertical-align:middle;line-height:1.25}
+  .dtab thead th{background:var(--head);color:#fff;font-size:16px}
+  .dtab th.rl{text-align:left;color:#fff;background:var(--head)}
+  .dtab td{color:var(--text,#cdd8e8)}
+  .dtab td small{display:block;color:var(--dim)}
+  .dnote{font-size:12px;color:var(--dim);margin-top:8px;line-height:1.5}
+  .preseg{display:flex;gap:8px}
+  .preseg .btn{flex:1;min-height:48px;font-size:13px}
+  .preseg .btn[aria-pressed="true"]{background:#0b2a47;border-color:#2b9bf0;color:#fff}
   .btn.on{color:#fff;border-color:var(--wp);background:var(--wp-bg)}
   .dbtn{min-height:44px;font:700 11px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--dng-fg);background:none;
     border:1px solid var(--dng-bd);border-radius:6px;padding:8px 14px}
@@ -336,11 +348,10 @@
 
 <footer id="foot">Reference aid only. Verify against current FM 2602 (17 APR 26). Progress saves on this device.</footer>
 <nav class="mainnav" role="tablist" aria-label="Section">
-  <button class="tab" role="tab" id="nav-nav" aria-selected="false">Nav Log<small>fix by fix</small></button>
   <button class="tab" role="tab" id="nav-pre" aria-selected="true">Preflight<small>PDF &middot; flight &middot; FMS</small></button>
+  <button class="tab" role="tab" id="nav-nav" aria-selected="false">Nav Log<small>fix by fix</small></button>
   <button class="tab" role="tab" id="nav-fuel" aria-selected="false">Fuel<small>bingo</small></button>
   <button class="tab" role="tab" id="nav-new" aria-selected="false">ETOPS<small>alt &middot; CPs</small></button>
-  <button class="tab" role="tab" id="nav-orca" aria-selected="false">ORCA<small>checklists</small></button>
   <button class="tab" role="tab" id="nav-in" aria-selected="false">Inflight<small>cruise</small></button>
 </nav>
 
@@ -921,28 +932,12 @@
   // OFP upload (parsed on this device by the Nav Log page; the PDF never leaves it)
   var ofpBar = el("div", "ofpbar full");
   var ofpTx = el("div", "ofptx");
-  ofpTx.appendChild(el("div", "ofpt", "Load the flight plan"));
-  var ofpSt = el("div", "ofps", "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in; FMS data you type yourself as a cross-check.");
+  ofpTx.appendChild(el("div", "ofpt", "Flight plan"));
+  var ofpSt = el("div", "ofps", "Load the United OFP PDF in the Nav Log tab. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in here; FMS data you type yourself as a cross-check.");
   ofpTx.appendChild(ofpSt);
-  var ofpBtn = el("button", "btn big", "Choose PDF");
-  var ofpFile = document.createElement("input"); ofpFile.type = "file"; ofpFile.accept = "application/pdf,.pdf,application/octet-stream"; ofpFile.className = "ofpfile";
-  var ofpView = el("button", "btn big", "View PDF"); ofpView.hidden = true; ofpView.style.background = "transparent"; ofpView.style.border = "1px solid var(--border2)";
-  ofpBar.appendChild(ofpTx); ofpBar.appendChild(ofpView); ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpFile);
-  ofpView.addEventListener("click", function(){ ensureNav(); var nb = document.getElementById("nav-nav"); if(nb) nb.click(); window.NavLog.viewPdf(); });
-  window.refreshOfpView = function(){ try{ if(!navMounted){ ofpView.hidden = true; return; } window.NavLog.hasPdf().then(function(ok){ ofpView.hidden = !ok; }); }catch(e){ ofpView.hidden = true; } };
   viewPre.appendChild(ofpBar);
-  ofpBtn.addEventListener("click", function(){ ofpFile.value = ""; ofpFile.click(); });
-  ofpFile.addEventListener("change", function(){
-    var fl = ofpFile.files && ofpFile.files[0]; if(!fl) return;
-    ofpSt.className = "ofps"; ofpSt.textContent = "Reading " + fl.name + "…";
-    clearTimeout(window.nlTimer);
-    window.nlTimer = setTimeout(function(){
-      ofpSt.className = "ofps err";
-      ofpSt.textContent = "Still no result after 30 seconds. Open the Nav Log tab and choose the PDF there, then tell me what it shows.";
-    }, 30000);
-    try{ window.nlLoadFile(fl); }
-    catch(e){ clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not start: " + (e && e.message ? e.message : e); }
-  });
+  ofpBar.appendChild(ofpTx);
+  window.refreshOfpView = function(){};
   window.addEventListener("navlogask", function(){ var nb = document.getElementById("nav-nav"); if(nb) nb.click(); });
   window.addEventListener("navlogerror", function(ev){
     clearTimeout(window.nlTimer); ofpSt.className = "ofps err"; ofpSt.textContent = "Could not read that PDF: " + ev.detail;
@@ -1009,6 +1004,10 @@
 
     // ── flight card ──
     var C = mkCard("Flight");
+    var preSeg = el("div", "preseg full"); var flightBtn = el("button", "btn big", "Flight"); var fmsBtn = el("button", "btn big", "FMS Data"); var diffBtn = el("button", "btn big", "Differences"); diffBtn.setAttribute("aria-pressed", "false");
+    flightBtn.setAttribute("aria-pressed", "true"); fmsBtn.setAttribute("aria-pressed", "false");
+    preSeg.appendChild(flightBtn); preSeg.appendChild(fmsBtn); preSeg.appendChild(diffBtn); viewPre.appendChild(preSeg);
+    var diffOn = lsGet("orca_pre_diff") === "1";
     var fltIn = inp({ maxlength: "12", autocapitalize: "characters", "aria-label": "Flight number", placeholder: "---" });
     var depIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Departure", placeholder: "---" });
     var arrIn = inp({ maxlength: "4", autocapitalize: "characters", "aria-label": "Arrival", placeholder: "---" });
@@ -1053,10 +1052,8 @@
     tiles.appendChild(tBlock); tiles.appendChild(tAir);
     C.body.appendChild(tiles);
     var edited = el("div", "edited"); C.body.appendChild(edited);
-    var fmsBtn = el("button", "btn big", "FMS DATA"); fmsBtn.setAttribute("aria-expanded", "false");
     var clr = el("button", "btn big", "Clear flight times");
-    var brow = el("div", "row2"); brow.appendChild(fmsBtn); brow.appendChild(clr);
-    C.body.appendChild(brow);
+    C.body.appendChild(clr);
     C.body.appendChild(el("div", "hint", "Times are UTC, 4 digits (1435 for 1435Z). Block and air time handle crossing midnight. The flight number, route, aircraft and times show in the header on every page."));
     addStale(C.warn, function(){ return rt; }, "flight times");
     viewPre.appendChild(C.wrap);
@@ -1090,6 +1087,30 @@
     F.wrap.hidden = !open;
     viewPre.appendChild(F.wrap);
 
+    // ── Differences card (757/767 differences card, 19 SEP 25, 756DIFF) ──
+    var D = mkCard("757/767 Differences");
+    var dh = '<div style="overflow-x:auto"><table class="dtab"><colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th></th><th>752</th><th>753</th><th>763</th><th>764</th></tr></thead><tbody>' +
+      '<tr><th class="rl">Min FAs</th><td>4</td><td>5</td><td>5</td><td>6</td></tr>' +
+      '<tr><th class="rl">Dom Oil</th><td colspan="2">16 qt</td><td rowspan="2">15 qt</td><td>16 qt</td></tr>' +
+      '<tr><th class="rl">ETOPS Oil</th><td colspan="2">18 qt</td><td>18 qt</td></tr>' +
+      '<tr><th class="rl">Ground Start</th><td colspan="2">25% N3, 10% N2, EGT&lt;100<sup>1</sup><small>(&ge;15% N3 MM, N2 MM)</small></td><td>MM N2, &gt;Fuel On Cmd bug</td><td>20% N2<small>(&ge;15% MM)</small></td></tr>' +
+      '<tr><th class="rl">Warmup<sup>2</sup></th><td colspan="4">3 min (shutdown &le;1.5 hr) / 5 min (&gt;1.5 hr)</td></tr>' +
+      '<tr><th class="rl">Cooldown<sup>3</sup></th><td colspan="2">3 min</td><td>5 min</td><td>3 min</td></tr>' +
+      '<tr><th class="rl">Turbulence</th><td colspan="4">.78M/290 (&ge;10K) / 250 (&lt;10K)</td></tr>' +
+      '</tbody></table></div>' +
+      '<div class="dnote"><sup>1</sup>Rich until idle if EGT=0 &nbsp; <sup>2</sup>Should for 757 / Rec. for 767 &nbsp; <sup>3</sup>Rec. for all</div>' +
+      '<div style="overflow-x:auto;margin-top:14px"><table class="dtab"><colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Max Limit</th><th>752</th><th>753</th><th>763</th><th>764</th></tr></thead><tbody>' +
+      '<tr><th class="rl">Taxi</th><td>256.0</td><td>273.5</td><td>408.4</td><td>451.0</td></tr>' +
+      '<tr><th class="rl">Takeoff</th><td>255.0</td><td>272.5</td><td>407.0</td><td>450.0</td></tr>' +
+      '<tr><th class="rl">Landing</th><td>198.0</td><td>224.0</td><td>320.0</td><td>350.0</td></tr>' +
+      '<tr><th class="rl">ZFW</th><td>185.4</td><td>211.7</td><td>291.3</td><td>330.0</td></tr>' +
+      '<tr><th class="rl">Wingspan</th><td colspan="2">135 ft<small>41.1 m</small></td><td>167 ft<small>50.9 m</small></td><td>171 ft<small>52.0 m</small></td></tr>' +
+      '<tr><th class="rl">180&deg; Turn</th><td>120 ft<small>36.6 m</small></td><td>141 ft<small>43.0 m</small></td><td>146 ft<small>44.6 m</small></td><td>165 ft<small>50.3 m</small></td></tr>' +
+      '</tbody></table></div>' +
+      '<div class="dnote">Reference copy of the 757/767 Differences card (19 SEP 25, 756DIFF). Max limit weights in thousands of pounds. The card and the Flight Manual govern.</div>';
+    var dbox = document.createElement("div"); dbox.innerHTML = dh; D.body.appendChild(dbox);
+    D.wrap.classList.add("full"); viewPre.appendChild(D.wrap);
+
     function render(){
       var blk = span(r.out, r.inn), air = span(r.off, r.on);
       tBlock.v.textContent = hm(blk); tAir.v.textContent = hm(air);
@@ -1101,9 +1122,9 @@
       var sub = "DIST " + (f.dist.trim() ? f.dist.trim() + " nm" : "--") + "   TIME " + tm;
       routeTop.v.textContent = rtxt; routeTop.sub.textContent = sub;
       
-      fmsBtn.setAttribute("aria-expanded", open ? "true" : "false");
-      fmsBtn.textContent = open ? "FMS DATA ▲" : "FMS DATA ▼";
-      F.wrap.hidden = !open;
+      fmsBtn.setAttribute("aria-pressed", open && !diffOn ? "true" : "false"); flightBtn.setAttribute("aria-pressed", !open && !diffOn ? "true" : "false");
+      diffBtn.setAttribute("aria-pressed", diffOn ? "true" : "false");
+      F.wrap.hidden = !open || diffOn; C.wrap.hidden = open || diffOn; D.wrap.hidden = !diffOn;
     }
     function saveRoute(){
       var any = Object.keys(r).some(function(k){ return r[k].trim(); });
@@ -1136,7 +1157,10 @@
         f[k] = map[k].value; saveFms();
       });
     });
-    fmsBtn.addEventListener("click", function(){ open = !open; saveFms(); render(); });
+    function setDiff(v){ diffOn = v; lsSet("orca_pre_diff", v ? "1" : "0"); }
+    fmsBtn.addEventListener("click", function(){ open = true; setDiff(false); saveFms(); render(); });
+    flightBtn.addEventListener("click", function(){ open = false; setDiff(false); saveFms(); render(); });
+    diffBtn.addEventListener("click", function(){ setDiff(true); render(); });
     clr.addEventListener("click", function(){
       ["out", "off", "on", "inn"].forEach(function(k){ r[k] = ""; tIn[k].value = ""; });
       saveRoute();
@@ -1149,7 +1173,7 @@
       r.dep = r.arr = ""; depIn.value = arrIn.value = "";
       ["out", "off", "on", "inn"].forEach(function(k){ r[k] = ""; tIn[k].value = ""; });
       Object.keys(f).forEach(function(k){ f[k] = ""; map[k].value = ""; });
-      open = false; lsDel(RT_KEY); lsDel(FMS_KEY); rt = 0; ft = 0;
+      open = false; setDiff(false); lsDel(RT_KEY); lsDel(FMS_KEY); rt = 0; ft = 0;
       setEdited(edited, 0); setEdited(fEdited, 0); render(); refreshStale(); window.dispatchEvent(new Event("fbsync"));
     });
     window.ofpApply = function(d){
@@ -1818,9 +1842,27 @@
     viewFuel.appendChild(C.wrap);
   })();
 
+  // Fuel page: buttons switch between the fuel ladder and the Bingo calculator.
+  (function(){
+    var wraps = [].slice.call(viewFuel.children).filter(function(n){ return n.classList.contains("wrap"); });
+    if(wraps.length < 2) return;
+    var PG_KEY = "orca_fuelpg", pg = lsGet(PG_KEY) === "bingo" ? 1 : 0;
+    var seg = el("div", "preseg full");
+    var bL = el("button", "btn big", "Fuel Ladder"), bB = el("button", "btn big", "Bingo");
+    seg.appendChild(bL); seg.appendChild(bB);
+    viewFuel.insertBefore(seg, wraps[0]);
+    function draw(){
+      wraps[0].hidden = pg !== 0; wraps[1].hidden = pg !== 1;
+      bL.setAttribute("aria-pressed", pg === 0 ? "true" : "false"); bB.setAttribute("aria-pressed", pg === 1 ? "true" : "false");
+    }
+    bL.addEventListener("click", function(){ pg = 0; lsSet(PG_KEY, "ladder"); draw(); });
+    bB.addEventListener("click", function(){ pg = 1; lsSet(PG_KEY, "bingo"); draw(); });
+    draw();
+  })();
+
   // ═══════════ NAVIGATION ═══════════
   var views = { orca: $("view-orca"), pre: viewPre, nav: $("view-nav"), "in": viewIn, fuel: viewFuel, "new": viewNew };
-  var btns = { orca: $("nav-orca"), pre: $("nav-pre"), nav: $("nav-nav"), "in": $("nav-in"), fuel: $("nav-fuel"), "new": $("nav-new") };
+  var btns = { pre: $("nav-pre"), nav: $("nav-nav"), "in": $("nav-in"), fuel: $("nav-fuel"), "new": $("nav-new") };
 
   // The Nav Log is built into this page (navlog-ui.js, in its own shadow root so styles never mix).
   var navHost = $("view-nav"), navMounted = false;
@@ -1851,7 +1893,9 @@
   function showView(v, persist){
     Object.keys(views).forEach(function(k){
       views[k].hidden = (k !== v);
-      btns[k].setAttribute("aria-selected", k === v ? "true" : "false");
+    });
+    Object.keys(btns).forEach(function(k){
+      btns[k].setAttribute("aria-selected", (k === v || (v === "orca" && k === "new")) ? "true" : "false");
     });
     $("orcatools").hidden = (v !== "orca");
     if(v === "nav") ensureNav();
@@ -1890,15 +1934,22 @@
     if(window.orcaResetChecks) window.orcaResetChecks();
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
     try{ if(navMounted) window.NavLog.reset(); }catch(e){}
-    try{ indexedDB.deleteDatabase("navlog-pdf"); }catch(e){} ofpView.hidden = true;
-    ofpSt.className = "ofps"; ofpSt.textContent = "Choose the United OFP PDF. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in. FMS data you type yourself.";
+    try{ indexedDB.deleteDatabase("navlog-pdf"); }catch(e){}
+    ofpSt.className = "ofps"; ofpSt.textContent = "Load the United OFP PDF in the Nav Log tab. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in here; FMS data you type yourself as a cross-check.";
     refreshStale();
   });
 
   (function(){
     var PG_KEY = "orca_etops_pg", pg = lsGet(PG_KEY) === "rings" ? "rings" : "fuel";
     var bF = el("button", "btn big", "Fuel Analysis"), bR = el("button", "btn big", "ETOPS Rings");
-    etpNav.appendChild(bF); etpNav.appendChild(bR);
+    var bO = el("button", "btn big", "ORCA Checklist"); bO.setAttribute("aria-pressed", "false");
+    etpNav.appendChild(bF); etpNav.appendChild(bR); etpNav.appendChild(bO);
+    // The same three buttons sit at the top of the ORCA checklist so you can get back.
+    var oNav = el("div", "etpnav"); oNav.style.cssText = "padding:8px 10px 0";
+    var oF = el("button", "btn big", "Fuel Analysis"), oR = el("button", "btn big", "ETOPS Rings"), oO = el("button", "btn big", "ORCA Checklist");
+    oO.setAttribute("aria-pressed", "true"); oF.setAttribute("aria-pressed", "false"); oR.setAttribute("aria-pressed", "false");
+    oNav.appendChild(oF); oNav.appendChild(oR); oNav.appendChild(oO);
+    var vo = $("view-orca"); vo.insertBefore(oNav, vo.firstChild);
     viewNew.appendChild(etpNav); viewNew.appendChild(etpFuel); viewNew.appendChild(etpRings);
     function showPg(p, save){
       pg = p;
@@ -1910,6 +1961,9 @@
     }
     bF.addEventListener("click", function(){ showPg("fuel", true); });
     bR.addEventListener("click", function(){ showPg("rings", true); });
+    bO.addEventListener("click", function(){ showView("orca", true); });
+    oF.addEventListener("click", function(){ showPg("fuel", true); showView("new", true); });
+    oR.addEventListener("click", function(){ showPg("rings", true); showView("new", true); });
     showPg(pg, false);
   })();
 
