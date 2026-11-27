@@ -1057,6 +1057,8 @@
     C.body.appendChild(el("div", "hint", "Times are UTC, 4 digits (1435 for 1435Z). Block and air time handle crossing midnight. The flight number, route, aircraft and times show in the header on every page."));
     addStale(C.warn, function(){ return rt; }, "flight times");
     viewPre.appendChild(C.wrap);
+    var preBrief = document.createElement("div"); preBrief.id = "preBrief"; viewPre.appendChild(preBrief);
+    window.mountPreBrief = function(){ try{ if(window.NavLog && window.NavLog.mountPre) window.NavLog.mountPre(preBrief); }catch(e){} };
 
     // ── FMS data card ──
     var F = mkCard("FMS Data");
@@ -1152,7 +1154,7 @@
       
       fmsBtn.setAttribute("aria-pressed", open && !diffOn ? "true" : "false"); flightBtn.setAttribute("aria-pressed", !open && !diffOn ? "true" : "false");
       diffBtn.setAttribute("aria-pressed", diffOn ? "true" : "false");
-      F.wrap.hidden = !open || diffOn; C.wrap.hidden = open || diffOn; D.wrap.hidden = !diffOn;
+      F.wrap.hidden = !open || diffOn; C.wrap.hidden = open || diffOn; preBrief.hidden = open || diffOn; D.wrap.hidden = !diffOn;
     }
     function saveRoute(){
       var any = Object.keys(r).some(function(k){ return r[k].trim(); });
@@ -1900,6 +1902,7 @@
     try{ window.NavLog.mount(navHost); }
     catch(e){ navMounted = false; window.dispatchEvent(new CustomEvent("navlogerror", { detail: "Nav Log could not start (" + (e && e.message ? e.message : e) + ")" })); }
   }
+  ensureNav(); if(window.mountPreBrief) window.mountPreBrief();
   window.nlLoadFile = function(file){ ensureNav(); window.NavLog.loadFile(file); };
 
   function updFbar(){

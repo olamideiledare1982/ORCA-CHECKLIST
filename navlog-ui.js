@@ -90,6 +90,7 @@ function setFlight(parsed, persist) {
     saveState();
     try {
       var okc = F.checks.filter(function (c) { return c.ok; }).length;
+      renderPre();
       window.dispatchEvent(new CustomEvent('navlogloaded', { detail: { h: F.header, fms: { weights: F.fms && F.fms.weights, cruiseFL: F.fms && F.fms.cruiseFL }, routing: { dist: F.routing && F.routing.dist, ci: F.routing && F.routing.ci, perf: F.routing && F.routing.perf }, checks: [okc, F.checks.length], etops: F.etopsAnalysis || null, ladder: F.ladder || [], lastFuel: W.length ? W[W.length - 1].fuel : null, redispatch: !!F.redispatch } }));
     } catch (e) {}
   }
@@ -145,6 +146,7 @@ function showApp() {
   renderTop(); renderTab(); host.scrollTo(0, 0);
 }
 function showEmpty(err) {
+  try { renderPre(); } catch (e1) {}
   try { var vb = $('#btnView'); if (vb) vb.hidden = true; } catch (e0) {}
   $('#top').classList.add('hide'); $('#view').classList.add('hide'); $('#empty').classList.remove('hide');
   $('#emptyErr').innerHTML = err ? '<div class="err"><b>Couldn’t read that file.</b><br>' + esc(err) + '</div>' : '';
@@ -838,6 +840,35 @@ function updView() {
   var b = $('#btnView'); if (!b) return;
   if (!KEY) { b.hidden = true; return; }
   var k = KEY; pdfdb.get(k).then(function (r) { if (k === KEY) b.hidden = !r; }).catch(function () { b.hidden = true; });
+}
+var preRoot = null;
+api.mountPre = function (host) {
+  if (preRoot) return;
+  preRoot = host.attachShadow({ mode: 'open' });
+  preRoot.innerHTML = '<style>' + CSS + '</style><div class="nl pre" style="height:auto;overflow:visible"></div>';
+  renderPre();
+};
+function renderPre() {
+  if (!preRoot) return;
+  var box = preRoot.querySelector('.pre'); if (!box) return;
+  if (!F) { box.innerHTML = ''; return; }
+  var h = F.header, rt = F.routing, fm = F.fms, wt = fm.weights, a = F.atc, o = '<div class="grid">';
+  o += '<div class="card"><h3>Flight</h3><div class="big2">' + esc(h.callsign) + ' <span style="font-size:15px;color:var(--muted)">' + esc(h.dateLocal) + '</span></div>' +
+    '<table class="kv"><tr><th></th><th class="r">Zulu</th><th class="r">Local</th></tr>' +
+    '<tr><td class="k">OUT ' + esc(h.dep.icao) + '/' + esc(h.dep.iata) + '</td><td class="r">' + esc(h.outZ) + '</td><td class="r">' + esc(h.outL) + '</td></tr>' +
+    '<tr><td class="k">OFF</td><td class="r">' + esc(h.offZ) + '</td><td class="r">' + esc(h.offL) + '</td></tr>' +
+    '<tr><td class="k">ON ' + esc(h.arr.icao) + '/' + esc(h.arr.iata) + '</td><td class="r">' + esc(h.onZ) + '</td><td class="r">' + esc(h.onL) + '</td></tr>' +
+    '<tr><td class="k">IN</td><td class="r">' + esc(h.inZ) + '</td><td class="r">' + esc(h.inL) + '</td></tr></table>' +
+    '<table class="kv" style="margin-top:6px">' + tr('Aircraft', esc(h.type) + ' · ' + esc(h.tail) + ' · nose ' + esc(h.nose), 'mono') + '</table></div>';
+  var vp = '<span class="chip">Init <b>' + esc((rt.initialLevel || '').replace('F', 'FL')) + '</b></span>' + (rt.vertical || []).map(function (x) { return '<span class="chip">' + esc(x.fix) + ' → <b>' + esc(x.level.replace('F', 'FL')) + '</b></span>'; }).join('');
+  o += '<div class="card"><h3>Routing &amp; profile</h3>' + (a && a.route ? '<h3 style="margin-top:2px">Filed flight plan</h3><div class="route">' + esc(a.route) + '</div>' : '') +
+    '<table class="kv" style="margin-top:8px">' + tr('Distance', esc(rt.dist) + ' NM', 'mono') + tr('Perf factor (' + esc(rt.perfLabel || '') + ')', esc(rt.perf || ''), 'mono') + tr('Top of climb', esc(fm.toc || ''), 'mono') + '</table>' +
+    '<h3 style="margin-top:12px">Vertical profile</h3><div class="chips">' + vp + '</div></div>';
+  function wrow(k, w) { return w ? '<tr><td class="k">' + k + '</td><td class="r">' + thou(w.planned) + '</td><td class="r">' + thou(w.max) + ' <span class="flag" title="' + esc(LIMIT[w.limit] || '') + '">' + esc(w.limit) + '</span></td></tr>' : ''; }
+  o += '<div class="card"><h3>Weights (k lb)</h3><table class="kv"><tr><th></th><th class="r">Planned</th><th class="r">Max / limit</th></tr>' + wrow('ZFW', wt.ZFW) + wrow('TOW', wt.TOW) + wrow('LW', wt.LW) + '</table></div>';
+  o += '<div class="card"><h3>Takeoff performance basis – ' + esc(h.dep.icao) + '</h3><table class="kv">' + perfRows(fm.tow) + '</table></div>';
+  o += '<div class="card"><h3>Landing performance basis – ' + esc(h.arr.icao) + '</h3><table class="kv">' + perfRows(fm.lw) + '</table></div></div>';
+  box.innerHTML = o;
 }
 api.viewPdf = viewPdf;
 api.hasPdf = function () { return KEY ? pdfdb.get(KEY).then(function (r) { return !!r; }).catch(function () { return false; }) : Promise.resolve(false); };
