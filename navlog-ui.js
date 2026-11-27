@@ -845,29 +845,40 @@ var preRoot = null;
 api.mountPre = function (host) {
   if (preRoot) return;
   preRoot = host.attachShadow({ mode: 'open' });
-  preRoot.innerHTML = '<style>' + CSS + '</style><div class="nl pre" style="height:auto;overflow:visible"></div>';
+  preRoot.innerHTML = '<style>' + CSS + '.pre .card>h3.fold{cursor:pointer;display:flex;justify-content:space-between;align-items:center}.pre .card>h3.fold:after{content:"\\25BE";color:var(--muted)}.pre .card.col>h3.fold:after{content:"\\25B8"}.pre .card.col>:not(h3.fold){display:none}.pre .src{font-size:12px;color:var(--muted);margin:0 2px 8px}</style><div class="nl pre" style="height:auto;overflow:visible"></div>';
+  preRoot.addEventListener('click', function (e) {
+    var h = e.target.closest && e.target.closest('h3.fold'); if (!h) return;
+    var c = h.parentNode, k = c.dataset.card, m = store.get('navlog:prefold') || {};
+    c.classList.toggle('col'); m[k] = c.classList.contains('col') ? 1 : 0; store.set('navlog:prefold', m);
+  });
   renderPre();
 };
 function renderPre() {
   if (!preRoot) return;
   var box = preRoot.querySelector('.pre'); if (!box) return;
-  if (!F) { box.innerHTML = ''; return; }
-  var h = F.header, rt = F.routing, fm = F.fms, wt = fm.weights, a = F.atc, o = '<div class="grid">';
-  o += '<div class="card"><h3>Flight</h3><div class="big2">' + esc(h.callsign) + ' <span style="font-size:15px;color:var(--muted)">' + esc(h.dateLocal) + '</span></div>' +
-    '<table class="kv"><tr><th></th><th class="r">Zulu</th><th class="r">Local</th></tr>' +
-    '<tr><td class="k">OUT ' + esc(h.dep.icao) + '/' + esc(h.dep.iata) + '</td><td class="r">' + esc(h.outZ) + '</td><td class="r">' + esc(h.outL) + '</td></tr>' +
-    '<tr><td class="k">OFF</td><td class="r">' + esc(h.offZ) + '</td><td class="r">' + esc(h.offL) + '</td></tr>' +
-    '<tr><td class="k">ON ' + esc(h.arr.icao) + '/' + esc(h.arr.iata) + '</td><td class="r">' + esc(h.onZ) + '</td><td class="r">' + esc(h.onL) + '</td></tr>' +
-    '<tr><td class="k">IN</td><td class="r">' + esc(h.inZ) + '</td><td class="r">' + esc(h.inL) + '</td></tr></table>' +
-    '<table class="kv" style="margin-top:6px">' + tr('Aircraft', esc(h.type) + ' · ' + esc(h.tail) + ' · nose ' + esc(h.nose), 'mono') + '</table></div>';
+  var G = F, stale = false;
+  if (!G) {   // no flight open: keep showing the last saved one so the cards survive a reload
+    var rec = store.get('navlog:recent') || [];
+    G = rec.length ? store.get('navlog:f:' + rec[0].key) : null; stale = !!G;
+  }
+  if (!G) { box.innerHTML = ''; return; }
+  var fold = store.get('navlog:prefold') || {};
+  function card(k, inner) { return '<div class="card' + (fold[k] ? ' col' : '') + '" data-card="' + k + '">' + inner + '</div>'; }
+  var h = G.header, rt = G.routing, fm = G.fms, wt = fm.weights, a = G.atc, o = (stale ? '<div class="src">Last loaded flight ' + esc(h.callsign) + ' ' + esc(h.dateLocal) + '. Load a new PDF in the Nav Log to replace it.</div>' : '') + '<div class="grid">';
+  o += card('flight', '<h3 class="fold">Flight</h3><div class="big2">' + esc(h.callsign) + ' <span style="font-size:15px;color:var(--muted)">' + esc(h.dateLocal) + '</span></div>' +
+    '<table class="kv"><tr><td class="k">OUT ' + esc(h.dep.icao) + '</td><td class="r mono">' + esc(h.outZ) + 'Z</td></tr>' +
+    '<tr><td class="k">OFF</td><td class="r mono">' + esc(h.offZ) + 'Z</td></tr>' +
+    '<tr><td class="k">ON ' + esc(h.arr.icao) + '</td><td class="r mono">' + esc(h.onZ) + 'Z</td></tr>' +
+    '<tr><td class="k">IN</td><td class="r mono">' + esc(h.inZ) + 'Z</td></tr>' +
+    tr('Aircraft', esc(h.type) + ' · ' + esc(h.tail) + ' · nose ' + esc(h.nose), 'mono') + '</table>');
   var vp = '<span class="chip">Init <b>' + esc((rt.initialLevel || '').replace('F', 'FL')) + '</b></span>' + (rt.vertical || []).map(function (x) { return '<span class="chip">' + esc(x.fix) + ' → <b>' + esc(x.level.replace('F', 'FL')) + '</b></span>'; }).join('');
-  o += '<div class="card"><h3>Routing &amp; profile</h3>' + (a && a.route ? '<h3 style="margin-top:2px">Filed flight plan</h3><div class="route">' + esc(a.route) + '</div>' : '') +
+  o += card('route', '<h3 class="fold">Routing &amp; profile</h3>' + (a && a.route ? '<h3 style="margin-top:2px">Filed flight plan</h3><div class="route">' + esc(a.route) + '</div>' : '') +
     '<table class="kv" style="margin-top:8px">' + tr('Distance', esc(rt.dist) + ' NM', 'mono') + tr('Perf factor (' + esc(rt.perfLabel || '') + ')', esc(rt.perf || ''), 'mono') + tr('Top of climb', esc(fm.toc || ''), 'mono') + '</table>' +
-    '<h3 style="margin-top:12px">Vertical profile</h3><div class="chips">' + vp + '</div></div>';
+    '<h3 style="margin-top:12px">Vertical profile</h3><div class="chips">' + vp + '</div>');
   function wrow(k, w) { return w ? '<tr><td class="k">' + k + '</td><td class="r">' + thou(w.planned) + '</td><td class="r">' + thou(w.max) + ' <span class="flag" title="' + esc(LIMIT[w.limit] || '') + '">' + esc(w.limit) + '</span></td></tr>' : ''; }
-  o += '<div class="card"><h3>Weights (k lb)</h3><table class="kv"><tr><th></th><th class="r">Planned</th><th class="r">Max / limit</th></tr>' + wrow('ZFW', wt.ZFW) + wrow('TOW', wt.TOW) + wrow('LW', wt.LW) + '</table></div>';
-  o += '<div class="card"><h3>Takeoff performance basis – ' + esc(h.dep.icao) + '</h3><table class="kv">' + perfRows(fm.tow) + '</table></div>';
-  o += '<div class="card"><h3>Landing performance basis – ' + esc(h.arr.icao) + '</h3><table class="kv">' + perfRows(fm.lw) + '</table></div></div>';
+  o += card('wts', '<h3 class="fold">Weights (k lb)</h3><table class="kv"><tr><th></th><th class="r">Planned</th><th class="r">Max / limit</th></tr>' + wrow('ZFW', wt.ZFW) + wrow('TOW', wt.TOW) + wrow('LW', wt.LW) + '</table>');
+  o += card('tow', '<h3 class="fold">Takeoff performance basis – ' + esc(h.dep.icao) + '</h3><table class="kv">' + perfRows(fm.tow) + '</table>');
+  o += card('lw', '<h3 class="fold">Landing performance basis – ' + esc(h.arr.icao) + '</h3><table class="kv">' + perfRows(fm.lw) + '</table>') + '</div>';
   box.innerHTML = o;
 }
 api.viewPdf = viewPdf;
