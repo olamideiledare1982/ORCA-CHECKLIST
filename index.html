@@ -930,6 +930,8 @@
 
   // ═══════════ 0) FLIGHT + FMS DATA ═══════════
   var flightRef = { dep: "", arr: "", block: "", on: [] };
+  var PLAN_KEY = "orca_plan";   // distance and time en route as printed on the loaded flight plan (read-only; separate from the FMS boxes you type)
+  try{ var pj = JSON.parse(localStorage.getItem(PLAN_KEY) || "null"); if(pj){ flightRef.planDist = pj.dist || ""; flightRef.planTime = pj.time || ""; } }catch(e){}
   // OFP upload (parsed on this device by the Nav Log page; the PDF never leaves it)
   var ofpBar = el("div", "ofpbar full");
   var ofpTx = el("div", "ofptx");
@@ -962,6 +964,8 @@
     var fno = m ? ((m[1] === "UAL" ? "UA" : m[1]) + " " + m[2]) : cs;
     var tm = String(h.ete || "").replace(/^0/, "");
     var ap = String(h.type || "").replace(/^B/, "");
+    flightRef.planDist = rt.dist ? String(rt.dist) : ""; flightRef.planTime = tm;
+    try{ localStorage.setItem(PLAN_KEY, JSON.stringify({ dist: flightRef.planDist, time: flightRef.planTime })); }catch(e){}
     window.ofpApply({
       flight: fno, dep: h.dep && h.dep.icao, arr: h.arr && h.arr.icao,
       out: h.outZ, off: h.offZ, on: h.onZ, inn: h.inZ, ap: ap,
@@ -976,6 +980,7 @@
     window.ofpApplyLadder([lf("PLAN GATE"), lf("MIN T/O"), altL ? kl(altL.fuel) : "", farL ? kl(farL.fuel) : "", lf("REMF")]);
     // Bingo is an on-demand calculator: it is never filled from the OFP.
     window.ofpApplyEtops(d.etops);
+    if(window.preRenderRoute) window.preRenderRoute();
     var etn = d.etops && ((d.etops.cps && d.etops.cps.length) || (d.etops.windows && d.etops.windows.length));
     // Date check: the OFP date is local; allow yesterday and tomorrow for time zones.
     var MON = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
@@ -1152,15 +1157,15 @@
     dView();
     D.wrap.classList.add("full"); viewPre.appendChild(D.wrap);
 
+    window.preRenderRoute = function(){ render(); };
     function render(){
       var blk = span(r.out, r.inn), air = span(r.off, r.on);
       tBlock.v.textContent = hm(blk); tAir.v.textContent = hm(air);
       var fm = span(r.out, r.on);
       flightRef.block = fm === null ? "" : hm(fm);
       var rtxt = (r.dep || "----") + " → " + (r.arr || "----");
-      var typed = f.time.trim().replace(/^(\d{1,2})(\d{2})$/, "$1:$2");
-      var tm = typed || "--";
-      var sub = "DIST " + (f.dist.trim() ? f.dist.trim() + " nm" : "--") + "   TIME " + tm;
+      var pt = String(flightRef.planTime || "").trim().replace(/^(\d{1,2})(\d{2})$/, "$1:$2");
+      var sub = "DIST " + (flightRef.planDist ? flightRef.planDist + " nm" : "--") + "   TIME " + (pt || "--");
       routeTop.v.textContent = rtxt; routeTop.sub.textContent = sub;
       
       fmsBtn.setAttribute("aria-pressed", open && !diffOn ? "true" : "false"); flightBtn.setAttribute("aria-pressed", !open && !diffOn ? "true" : "false");
@@ -2003,6 +2008,7 @@
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
     try{ if(navMounted) window.NavLog.reset(); }catch(e){}
     try{ indexedDB.deleteDatabase("navlog-pdf"); }catch(e){}
+    try{ localStorage.removeItem(PLAN_KEY); }catch(e){} flightRef.planDist = ""; flightRef.planTime = ""; if(window.preRenderRoute) window.preRenderRoute();
     ofpSt.className = "ofps"; ofpSt.textContent = "Load the United OFP PDF here or in the Nav Log tab. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in here; FMS data you type yourself as a cross-check.";
     refreshStale();
   });
