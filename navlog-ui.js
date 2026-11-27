@@ -229,7 +229,7 @@ function evRow(e, ro) {
   if (e.type === 'cp') {
     var alts = e.alts.map(function (a) { return esc(a.apt) + ' ' + a.dist + ' NM'; }).join(' / ');
     return '<div class="ev cp"><span class="ic">◆</span><span class="tag" style="color:var(--warn)">CP-' + e.n + '</span><b class="mono">' + alts + '</b>' +
-      '<span class="mono">ET ' + esc(e.et) + ' · ' + esc(e.latStr) + ' ' + esc(e.lonStr) + ' · fuel rem ' + fk(e.fuelRem) + ' / req ' + fk(e.fuelReq) + ' <span class="' + (e.fuelRem >= e.fuelReq ? 'good' : 'bad') + '">(' + sgnk(e.fuelRem - e.fuelReq) + ')</span></span></div>';
+      '<span class="mono">ET ' + esc(e.et) + ' · ' + esc(e.latStr) + ' ' + esc(e.lonStr) + ' · fuel rem ' + fk(e.fuelRem) + ' / req ' + fk(e.fuelReq) + '</span></div>';
   }
   if (e.type === 'check') {
     return '<div class="ev check"><label><input type="checkbox" data-chk="' + id + '"' + (ST.chk[id] ? ' checked' : '') + (ro ? ' disabled' : '') + '><span>' + esc(e.text) + '</span></label></div>';
@@ -408,9 +408,9 @@ function renderBrief(v) {
   function wrow(k, o) {
     if (!o) return '';
     var margin = o.max - o.planned;
-    return '<tr><td class="k">' + k + '</td><td class="r">' + thou(o.planned) + '</td><td class="r">' + thou(o.max) + ' <span class="flag" title="' + esc(LIMIT[o.limit] || '') + '">' + esc(o.limit) + '</span></td><td class="r ' + (margin < 2000 ? 'late' : '') + '">' + thou(margin) + '</td></tr>';
+    return '<tr><td class="k">' + k + '</td><td class="r">' + thou(o.planned) + '</td><td class="r">' + thou(o.max) + ' <span class="flag" title="' + esc(LIMIT[o.limit] || '') + '">' + esc(o.limit) + '</span></td></tr>';
   }
-  out += '<div class="card"><h3>Weights (lb)</h3><table class="kv"><tr><th></th><th class="r">Planned</th><th class="r">Max / limit</th><th class="r">Margin</th></tr>' +
+  out += '<div class="card"><h3>Weights (lb)</h3><table class="kv"><tr><th></th><th class="r">Planned</th><th class="r">Max / limit</th></tr>' +
     wrow('ZFW', wt.ZFW) + wrow('TOW', wt.TOW) + wrow('LW', wt.LW) + '</table>' +
     '<div style="font-size:12px;color:var(--muted);margin-top:8px">' + Object.keys(LIMIT).filter(function (k) { return [wt.ZFW, wt.TOW, wt.LW].some(function (o) { return o && o.limit === k; }); }).map(function (k) { return '<b>' + k + '</b> = ' + LIMIT[k]; }).join(' · ') + '</div>' +
     (h.sys && h.sys.ptog ? '<div class="mono" style="font-size:12.5px;margin-top:8px">' + esc(h.sys.terrain || '') + '<br>' + esc(h.sys.ptog) + '</div>' : '') + '</div>';
@@ -590,7 +590,7 @@ function renderEtops(v) {
         return '<tr' + (strong ? ' class="hl"' : '') + '><td>' + esc(r.label) + '</td>' + cells + '</tr>';
       }).join('');
       o += '<div class="card"><h3>CP-' + c.n + (ev ? ' · ET ' + esc(ev.et) : '') + ' · ' + esc(c.latStr) + ' ' + esc(c.lonStr) + '</h3>' +
-        '<div class="mono" style="margin-bottom:6px">Fuel remaining <b>' + thou(c.fuelRem) + '</b> · required <b>' + thou(c.fuelReq) + '</b> · <span class="' + (c.fuelRem >= c.fuelReq ? 'good' : 'bad') + '">margin ' + sgnk(c.fuelRem - c.fuelReq) + '</span></div>' +
+        '<div class="mono" style="margin-bottom:6px">Fuel remaining <b>' + thou(c.fuelRem) + '</b> · required <b>' + thou(c.fuelReq) + '</b></div>' +
         '<div class="lines">' + c.times.map(function (t) { return '<div class="mono" style="font-size:12px">' + esc(t) + '</div>'; }).join('') + '</div>' +
         '<table class="kv" style="margin-top:8px">' + heads + body + '</table></div>';
     });
