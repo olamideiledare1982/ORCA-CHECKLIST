@@ -140,6 +140,20 @@
   .layout table.dev th,.layout table.dev td{padding:.25em .5em}
   footer{flex:none;margin:0;font-size:8px;line-height:1.2}
   @media (max-width:640px){.layout{overflow:auto}}
+  .idxb{margin-left:auto;flex:none;font:700 10px var(--mono);letter-spacing:.08em;padding:7px 12px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;text-transform:uppercase}
+  .idxb + .pill{margin-left:0}
+  #idxov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;justify-content:flex-end}
+  #idxov[hidden]{display:none !important}
+  #idxov .sheet{width:min(440px,100%);background:var(--surface);border-left:1px solid var(--border2);padding:16px calc(16px + env(safe-area-inset-right,0px)) 24px 16px;overflow:auto}
+  #idxov h2{margin:0 0 4px;font-size:18px}
+  #idxov .sub{margin:0 0 12px;color:var(--dim);font-size:13px}
+  #idxov .grp{margin:14px 0 6px;font:700 11px var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase;display:flex;justify-content:space-between}
+  #idxov .grp b{color:var(--ual)}
+  #idxov .row{display:flex;flex-wrap:wrap;gap:8px}
+  #idxov .it{border:1px solid var(--border2);background:var(--bg);color:var(--text);border-radius:10px;padding:12px 14px;min-width:110px;font:600 14px/1.2 inherit;text-align:left;cursor:pointer}
+  #idxov .it[disabled]{opacity:.4}
+  #idxov .it small{display:block;color:var(--dim);font-weight:400;font-size:11px;margin-top:3px}
+  #idxov .xb{float:right;border:1px solid var(--border2);background:none;color:var(--dim);border-radius:8px;padding:6px 10px;cursor:pointer}
   .pill{margin-left:auto;flex:none;font:700 10px var(--mono);letter-spacing:.08em;padding:7px 10px;border-radius:999px;
     border:1px solid var(--border2);color:var(--dim);white-space:nowrap}
   .pill::before{content:"\25CF";margin-right:6px}
@@ -334,6 +348,7 @@
     <div class="fb"><span>IN</span><b id="fbIn">----</b></div>
   </div>
   <label class="flt"><span>INFO</span><input id="flt" type="text" maxlength="12" placeholder="---" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Flight info"></label>
+  <button class="idxb" id="idxBtn" aria-label="Index of all pages">&#9776; Index</button>
   <div class="pill wait" id="status" role="status">CHECKING…</div>
 </div>
 
@@ -2044,6 +2059,59 @@
   var start = lsGet(NAV_KEY);
   if(!views[start]) start = "pre";
   showView(start, false);
+})();
+</script>
+
+<script>
+(function(){
+  var G = [
+    ["Preflight", "nav-pre", [["Flight","PDF, times, brief cards"],["FMS Data","you type, self-check"],["Differences","757/767 card"]]],
+    ["Nav Log", "nav-nav", [["Brief","brief"],["Nav Log","nav"],["Fuel","fuel"],["Route","route"],["ETOPS","etops"]]],
+    ["Fuel", "nav-fuel", [["Fuel Ladder",""],["Bingo",""]]],
+    ["ETOPS", "nav-new", [["Fuel Analysis",""],["ETOPS Rings",""],["ORCA Checklist",""]]],
+    ["Inflight", "nav-in", [["Time Remaining",""],["HF Frequencies",""]]]
+  ];
+  var VIEW = { "nav-pre": "view-pre", "nav-nav": "view-nav", "nav-fuel": "view-fuel", "nav-new": "view-new", "nav-in": "view-in" };
+  var ov = document.createElement("div"); ov.id = "idxov"; ov.hidden = true; document.body.appendChild(ov);
+  function navRoot(){ var h = document.getElementById("view-nav"); return h && h.shadowRoot; }
+  function navTab(k){ var r = navRoot(); return r && r.querySelector('#tabs button[data-tab="' + k + '"]'); }
+  function close(){ ov.hidden = true; }
+  function vis(e){ return e.offsetParent !== null; }
+  function go(tabId, label, key){
+    close();
+    document.getElementById(tabId).click();
+    setTimeout(function(){
+      var view = document.getElementById(VIEW[tabId]);
+      if(tabId === "nav-nav"){ var b = navTab(key); if(b) b.click(); return; }
+      if(tabId === "nav-in"){
+        var all = view.querySelectorAll("*"), t = label.toLowerCase();
+        for(var i = 0; i < all.length; i++){ if(all[i].children.length === 0 && all[i].textContent.trim().toLowerCase() === t){ all[i].scrollIntoView({ block: "start" }); break; } }
+        return;
+      }
+      var bs = view.querySelectorAll("button"), tl = label.toLowerCase();
+      for(var j = 0; j < bs.length; j++) if(bs[j].textContent.trim().toLowerCase() === tl && vis(bs[j])){ bs[j].click(); break; }
+    }, 60);
+  }
+  function build(){
+    var cur = ""; Object.keys(VIEW).forEach(function(k){ var e = document.getElementById(k); if(e && e.getAttribute("aria-selected") === "true") cur = k; });
+    var h = '<div class="sheet"><button class="xb" id="idxX">&#10005;</button><h2>Index</h2><p class="sub">Tap any page to go straight to it.</p>';
+    G.forEach(function(g){
+      h += '<div class="grp"><span>' + g[0] + '</span>' + (g[1] === cur ? '<b>&#9679; you are here</b>' : '') + '</div><div class="row">';
+      g[2].forEach(function(it){
+        var dis = g[1] === "nav-nav" && !navTab(it[1]);
+        h += '<button class="it" data-tab="' + g[1] + '" data-label="' + it[0] + '" data-key="' + (g[1] === "nav-nav" ? it[1] : "") + '"' + (dis ? " disabled" : "") + '>' + it[0] + (g[1] === "nav-pre" ? '<small>' + it[1] + '</small>' : '') + '</button>';
+      });
+      h += '</div>';
+    });
+    if(!navTab("nav")) h += '<p class="sub" style="margin-top:12px">Nav Log pages are available once a flight plan PDF is loaded.</p>';
+    ov.innerHTML = h + '</div>';
+  }
+  document.getElementById("idxBtn").addEventListener("click", function(){ build(); ov.hidden = false; });
+  ov.addEventListener("click", function(e){
+    if(e.target === ov || e.target.id === "idxX") return close();
+    var b = e.target.closest && e.target.closest(".it"); if(b && !b.disabled) go(b.dataset.tab, b.dataset.label, b.dataset.key);
+  });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
 })();
 </script>
 </body>
