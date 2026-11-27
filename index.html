@@ -934,10 +934,20 @@
   var ofpBar = el("div", "ofpbar full");
   var ofpTx = el("div", "ofptx");
   ofpTx.appendChild(el("div", "ofpt", "Flight plan"));
-  var ofpSt = el("div", "ofps", "Load the United OFP PDF in the Nav Log tab. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in here; FMS data you type yourself as a cross-check.");
+  var ofpSt = el("div", "ofps", "Load the United OFP PDF here or in the Nav Log tab. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in here; FMS data you type yourself as a cross-check.");
   ofpTx.appendChild(ofpSt);
   viewPre.appendChild(ofpBar);
   ofpBar.appendChild(ofpTx);
+  var ofpFile = document.createElement("input"); ofpFile.type = "file"; ofpFile.accept = "application/pdf,.pdf"; ofpFile.style.display = "none";
+  var ofpBtn = el("button", "btn big", "Load flight plan PDF"); ofpBtn.id = "preLoadPdf";
+  ofpBtn.addEventListener("click", function(){ ofpFile.click(); });
+  ofpFile.addEventListener("change", function(){
+    var f = ofpFile.files && ofpFile.files[0]; if(!f) return;
+    ofpSt.className = "ofps"; ofpSt.textContent = "Reading " + f.name + "…";
+    try{ window.nlLoadFile(f); }catch(e){ ofpSt.className = "ofps err"; ofpSt.textContent = "Could not start the Nav Log: " + e.message; }
+    setTimeout(function(){ ofpFile.value = ""; }, 500);
+  });
+  ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpFile);
   window.refreshOfpView = function(){};
   window.addEventListener("navlogask", function(){ var nb = document.getElementById("nav-nav"); if(nb) nb.click(); });
   window.addEventListener("navlogerror", function(ev){
@@ -1993,7 +2003,7 @@
     resetters.forEach(function(f){ try{ f(); }catch(e){} });
     try{ if(navMounted) window.NavLog.reset(); }catch(e){}
     try{ indexedDB.deleteDatabase("navlog-pdf"); }catch(e){}
-    ofpSt.className = "ofps"; ofpSt.textContent = "Load the United OFP PDF in the Nav Log tab. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in here; FMS data you type yourself as a cross-check.";
+    ofpSt.className = "ofps"; ofpSt.textContent = "Load the United OFP PDF here or in the Nav Log tab. It is read on this device and never uploaded. Flight, times, fuel ladder and ETOPS fill in here; FMS data you type yourself as a cross-check.";
     refreshStale();
   });
 
