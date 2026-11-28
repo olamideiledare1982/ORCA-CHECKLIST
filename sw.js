@@ -1,10 +1,16 @@
 // ORCA Checklist service worker
 // Bump VERSION whenever you change any file so devices pick up the update.
-const VERSION = "orca-v77";
+const VERSION = "orca-v78";
 const ASSETS = [
   "./",
   "./index.html",
   "./navlog-ui.js",
+  "./fp-core.js",
+  "./fp-preflight.js",
+  "./fp-etops.js",
+  "./fp-inflight.js",
+  "./fp-fuel.js",
+  "./fp-nav.js",
   "./navlog-parser.js",
   "./selftest.html",
   "./vendor/pdf.min.js",
