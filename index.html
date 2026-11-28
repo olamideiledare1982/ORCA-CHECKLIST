@@ -855,7 +855,15 @@
     });
     h += '<p class="sub" style="margin-top:18px"><a href="selftest.html" style="color:var(--ual)">Self-test: check flight plan PDFs</a></p>';
     if(!navTab("nav")) h += '<p class="sub" style="margin-top:12px">Nav Log pages are available once a flight plan PDF is loaded.</p>';
+    h += '<p class="sub" id="idxVer" style="margin-top:6px">Version: checking…</p>';
     ov.innerHTML = h + '</div>';
+    try{
+      caches.keys().then(function(ks){
+        var v = ks.filter(function(k){ return /^orca-v\d+$/.test(k); }).map(function(k){ return +k.slice(6); }).sort(function(x, y){ return y - x; })[0];
+        var e = document.getElementById("idxVer");
+        if(e) e.textContent = v ? "Version: v" + v + (navigator.serviceWorker && navigator.serviceWorker.controller ? "" : " (offline copy not active yet)") : "Version: not installed for offline use yet";
+      }).catch(function(){ var e = document.getElementById("idxVer"); if(e) e.textContent = ""; });
+    }catch(e){ var e2 = document.getElementById("idxVer"); if(e2) e2.textContent = ""; }
   }
   document.getElementById("idxBtn").addEventListener("click", function(){ build(); ov.hidden = false; });
   ov.addEventListener("click", function(e){
