@@ -853,9 +853,10 @@ async function pvRender() {
   }, { root: body, rootMargin: '600px 0px' });
   slots.forEach(function (d) { pvIO.observe(d); });
 }
+function pdfKey() { if (KEY) return KEY; var rec = store.get('navlog:recent') || []; return rec.length ? rec[0].key : null; }   // the open flight, else the last saved one
 async function viewPdf() {
-  var rec = null;
-  try { rec = KEY ? await pdfdb.get(KEY) : null; } catch (e) {}
+  var rec = null, pk = pdfKey();
+  try { rec = pk ? await pdfdb.get(pk) : null; } catch (e) {}
   pv.hidden = false; var body = $('#pvb');
   if (!rec) { $('#pvt').textContent = 'PDF'; body.innerHTML = '<div class="pvm">The saved PDF is no longer on this device. Load it again with Load PDF.</div>'; return; }
   $('#pvt').textContent = rec.name || 'Flight plan';
@@ -868,7 +869,7 @@ async function viewPdf() {
 }
 pv.addEventListener('click', function (e) {
   var id = e.target && e.target.id;
-  if (id === 'pvc') { pv.hidden = true; pvToken++; if (pvIO) { pvIO.disconnect(); pvIO = null; } pvDoc = null; $('#pvb').innerHTML = ''; }
+  if (id === 'pvc') { window.dispatchEvent(new Event('navlogpdfclosed')); pv.hidden = true; pvToken++; if (pvIO) { pvIO.disconnect(); pvIO = null; } pvDoc = null; $('#pvb').innerHTML = ''; }
   else if (id === 'pvz') { if (!pvDoc) return; setZoom(1); }
   else if (id === 'pvp') { if (!pvDoc) return; setZoom(pvZoom + 0.5); }
   else if (id === 'pvm') { if (!pvDoc) return; setZoom(pvZoom - 0.5); }
@@ -919,7 +920,7 @@ function renderPre() {
   box.innerHTML = o;
 }
 api.viewPdf = viewPdf;
-api.hasPdf = function () { return KEY ? pdfdb.get(KEY).then(function (r) { return !!r; }).catch(function () { return false; }) : Promise.resolve(false); };
+api.hasPdf = function () { var k = pdfKey(); return k ? pdfdb.get(k).then(function (r) { return !!r; }).catch(function () { return false; }) : Promise.resolve(false); };
 api.reset = function () {
   pdfdb.clear().catch(function () {});
   if (KEY) { store.del('navlog:f:' + KEY); store.del('navlog:s:' + KEY); store.set('navlog:recent', (store.get('navlog:recent') || []).filter(function (r) { return r.key !== KEY; })); }

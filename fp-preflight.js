@@ -24,7 +24,25 @@ var el = FP.el, viewPre = FP.viewPre, lsJSON = FP.lsJSON, pad2 = FP.pad2, mkCard
     try{ window.nlLoadFile(f); }catch(e){ ofpSt.className = "ofps err"; ofpSt.textContent = "Could not start the Nav Log: " + e.message; }
     setTimeout(function(){ ofpFile.value = ""; }, 500);
   });
-  ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpFile);
+  var ofpView = el("button", "btn big", "View PDF"); ofpView.id = "preViewPdf"; ofpView.hidden = true;
+  var viewBack = null;
+  ofpView.addEventListener("click", function(){
+    var cur = ["pre","nav","fuel","new","in"].filter(function(k){ var b = document.getElementById("nav-" + k); return b && b.getAttribute("aria-selected") === "true"; })[0];
+    viewBack = cur && cur !== "nav" ? "nav-" + cur : null;
+    var nb = document.getElementById("nav-nav"); if(nb) nb.click();   // the viewer lives in the Nav Log page
+    setTimeout(function(){ try{ window.NavLog.viewPdf(); }catch(e){} }, 60);
+  });
+  window.addEventListener("navlogpdfclosed", function(){
+    if(viewBack){ var b = document.getElementById(viewBack); viewBack = null; if(b) b.click(); }
+  });
+  function refreshViewBtn(){
+    try{ if(window.NavLog && window.NavLog.hasPdf) window.NavLog.hasPdf().then(function(ok){ ofpView.hidden = !ok; }); }catch(e){}
+  }
+  window.refreshViewBtn = refreshViewBtn;
+  ["navlogloaded","navlogerror"].forEach(function(ev){ window.addEventListener(ev, function(){ setTimeout(refreshViewBtn, 400); }); });
+  document.addEventListener("click", function(e){ var t = e.target; if(t && (t.id === "nav-pre" || t.id === "resetAll" || t.id === "wipeAll")) setTimeout(refreshViewBtn, 500); });
+  setTimeout(refreshViewBtn, 800);
+  ofpBar.appendChild(ofpBtn); ofpBar.appendChild(ofpView); ofpBar.appendChild(ofpFile);
   window.refreshOfpView = function(){};
   window.addEventListener("navlogask", function(){ var nb = document.getElementById("nav-nav"); if(nb) nb.click(); });
   window.addEventListener("navlogerror", function(ev){
