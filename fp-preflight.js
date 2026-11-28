@@ -200,6 +200,9 @@ var el = FP.el, viewPre = FP.viewPre, lsJSON = FP.lsJSON, pad2 = FP.pad2, mkCard
 
     // ── Differences card (757/767 differences card, 19 SEP 25, 756DIFF) ──
     var D = mkCard("757/767 Differences");
+    var FLARE = '<div style="overflow-x:auto;margin-top:14px"><table class="dtab"><colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup><thead><tr><th>Flare height</th><th colspan="3">All types: 757 and 767</th></tr></thead><tbody>' +
+      '<tr><th class="rl">Vertical speed (fpm)</th><td>600</td><td>750</td><td>900</td></tr>' +
+      '<tr><th class="rl">Flare height (ft)</th><td>20</td><td>25</td><td>30</td></tr></tbody></table></div>';
     var dh = '<div style="overflow-x:auto"><table class="dtab"><colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th></th><th>752</th><th>753</th><th>763</th><th>764</th></tr></thead><tbody>' +
       '<tr><th class="rl">Min FAs</th><td>4</td><td>5</td><td>5</td><td>6</td></tr>' +
       '<tr><th class="rl">Dom Oil</th><td colspan="2">16 qt</td><td rowspan="2">15 qt</td><td>16 qt</td></tr>' +
@@ -217,7 +220,7 @@ var el = FP.el, viewPre = FP.viewPre, lsJSON = FP.lsJSON, pad2 = FP.pad2, mkCard
       '<tr><th class="rl">ZFW</th><td>185.4</td><td>211.7</td><td>291.3</td><td>330.0</td></tr>' +
       '<tr><th class="rl">Wingspan</th><td colspan="2">135 ft<small>41.1 m</small></td><td>167 ft<small>50.9 m</small></td><td>171 ft<small>52.0 m</small></td></tr>' +
       '<tr><th class="rl">180&deg; Turn</th><td>120 ft<small>36.6 m</small></td><td>141 ft<small>43.0 m</small></td><td>146 ft<small>44.6 m</small></td><td>165 ft<small>50.3 m</small></td></tr>' +
-      '</tbody></table></div>' +
+      '</tbody></table></div>' + FLARE +
       '<div class="dnote">Reference copy of the 757/767 Differences card (19 SEP 25, 756DIFF). Max limit weights in thousands of pounds. The card and the Flight Manual govern.</div>';
     var DT = { "752": { n: "757-200", fa: "4", dom: "16 qt", et: "18 qt", gs: "25% N3, 10% N2, EGT&lt;100<sup>1</sup><small>(&ge;15% N3 MM, N2 MM)</small>", cd: "3 min", lim: ["256.0","255.0","198.0","185.4"], ws: "135 ft<small>41.1 m</small>", tn: "120 ft<small>36.6 m</small>" },
       "753": { n: "757-300", fa: "5", dom: "16 qt", et: "18 qt", gs: "25% N3, 10% N2, EGT&lt;100<sup>1</sup><small>(&ge;15% N3 MM, N2 MM)</small>", cd: "3 min", lim: ["273.5","272.5","224.0","211.7"], ws: "135 ft<small>41.1 m</small>", tn: "141 ft<small>43.0 m</small>" },
@@ -232,7 +235,7 @@ var el = FP.el, viewPre = FP.viewPre, lsJSON = FP.lsJSON, pad2 = FP.pad2, mkCard
         r("Turbulence", ".78M/290 (&ge;10K) / 250 (&lt;10K)") + '</tbody></table></div>' +
         '<div class="dnote"><sup>1</sup>Rich until idle if EGT=0 &nbsp; <sup>2</sup>Should for 757 / Rec. for 767 &nbsp; <sup>3</sup>Rec. for all</div>' +
         '<div style="overflow-x:auto;margin-top:14px"><table class="dtab"><colgroup><col style="width:40%"><col style="width:60%"></colgroup><thead><tr><th>Max Limit</th><th>' + id + '</th></tr></thead><tbody>' +
-        r("Taxi", t.lim[0]) + r("Takeoff", t.lim[1]) + r("Landing", t.lim[2]) + r("ZFW", t.lim[3]) + r("Wingspan", t.ws) + r("180&deg; Turn", t.tn) + '</tbody></table></div>' +
+        r("Taxi", t.lim[0]) + r("Takeoff", t.lim[1]) + r("Landing", t.lim[2]) + r("ZFW", t.lim[3]) + r("Wingspan", t.ws) + r("180&deg; Turn", t.tn) + '</tbody></table></div>' + FLARE +
         '<div class="dnote">Reference copy of the 757/767 Differences card (19 SEP 25, 756DIFF). Max limit weights in thousands of pounds. The card and the Flight Manual govern.</div>';
     }
     var dSeg = el("div", "preseg full"); var dMine = el("button", "btn", ""); var dAll = el("button", "btn", "All types"); dSeg.appendChild(dMine); dSeg.appendChild(dAll);
