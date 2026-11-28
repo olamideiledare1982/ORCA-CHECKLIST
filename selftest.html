@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Flight Plan self-test</title>
+<style>
+:root{--bg:#0b1220;--sf:#111b2e;--bd:#24324d;--tx:#e8eefc;--mu:#8fa0bf;--ok:#00d4a0;--bad:#ff6b6b;--ac:#2b8cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px -apple-system,Segoe UI,Roboto,sans-serif;padding:16px max(16px,env(safe-area-inset-left))}
+h1{font-size:20px;margin:0 0 4px}p{color:var(--mu);margin:0 0 14px;font-size:13px}
+button,.btn{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:12px 16px;font:700 14px inherit;cursor:pointer}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin:12px 0}
+.card h2{margin:0 0 6px;font-size:16px}.card .sub{color:var(--mu);font-size:12px;margin-bottom:8px}
+.sum{font-weight:700}.sum.ok{color:var(--ok)}.sum.bad{color:var(--bad)}
+.ck{display:flex;gap:8px;font:13px ui-monospace,Menlo,monospace;padding:2px 0}.ck b{flex:none;width:44px}.ck.ok b{color:var(--ok)}.ck.bad b{color:var(--bad)}
+.ck.bad{color:var(--bad)}details summary{cursor:pointer;color:var(--mu);font-size:13px;margin-top:6px}
+a{color:var(--ac)}
+</style></head><body>
+<h1>Flight Plan self-test</h1>
+<p>Choose one or more United OFP PDFs. Each is read on this device and run through the parser with sanity checks. Nothing is uploaded or saved.</p>
+<input id="f" type="file" accept="application/pdf,.pdf" multiple hidden>
+<button id="go">Choose PDFs</button> <a href="./" style="margin-left:12px">Back to the app</a>
+<div id="out"></div>
+<script src="vendor/pdf.min.js"></script>
+<script src="navlog-parser.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+// Snapshot of what the parser produced for known plans when it was verified against the PDFs.
+// A mismatch means the parser (or a plan layout) changed: look at that plan before trusting it.
+var KNOWN = {
+  'UAL992 16NOV26': { type:'B764', dep:'KIAD', arr:'LEBL', wps:58, dist:3762, planTO:96992, remf:18532, tow:379215, etops:true },
+  'UAL991 18NOV26': { type:'B764', dep:'LEBL', arr:'KIAD', wps:60, dist:3831, planTO:117932, remf:14013, tow:420931, etops:true },
+  'UAL2191 15SEP26': { type:'B752', dep:'KEWR', arr:'KLAX', wps:47, dist:2226, planTO:50087, remf:11475, tow:226452, etops:false },
+  'UAL1022 30OCT26': { type:'B753', dep:'KMCO', arr:'KDEN', wps:40, dist:1441, planTO:55537, remf:25397, tow:239537, etops:false }
+};
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+function checksFor(F){
+  var r = [], h = F.header, wps = F.navlogs[0].events.filter(function(e){ return e.type === 'wp'; });
+  function add(n, ok, d){ r.push({ n: n, ok: !!ok, d: d || '' }); }
+  F.checks.forEach(function(c){ add(c.name, c.ok, c.detail); });
+  ['callsign','type','tail','outZ','offZ','onZ','inZ'].forEach(function(k){ add('Header: ' + k, h[k] && String(h[k]).trim() !== '', h[k]); });
+  add('Departure and arrival airports', h.dep && h.dep.icao && h.arr && h.arr.icao, (h.dep && h.dep.icao) + ' > ' + (h.arr && h.arr.icao));
+  var w = F.fms && F.fms.weights || {};
+  ['ZFW','TOW','LW'].forEach(function(k){ add('Weight ' + k + ' planned and max', w[k] && w[k].planned > 0 && w[k].max > 0, w[k] && (w[k].planned + ' / ' + w[k].max)); });
+  add('Planned weights are below limits', w.ZFW && w.TOW && w.LW && w.ZFW.planned <= w.ZFW.max && w.TOW.planned <= w.TOW.max && w.LW.planned <= w.LW.max);
+  var L = {}; (F.ladder || []).forEach(function(x){ L[x.label] = x; });
+  ['MIN T/O','PLAN T/O','PLAN GATE','REMF'].forEach(function(k){ add('Fuel ladder has ' + k, L[k] && L[k].fuel > 0, L[k] && L[k].fuel); });
+  add('Ladder order MIN T/O < PLAN T/O < PLAN GATE', L['MIN T/O'] && L['PLAN T/O'] && L['PLAN GATE'] && L['MIN T/O'].fuel < L['PLAN T/O'].fuel && L['PLAN T/O'].fuel < L['PLAN GATE'].fuel);
+  var mono = true, last = -1; wps.forEach(function(x){ if(x.etMin != null){ if(x.etMin < last) mono = false; last = x.etMin; } });
+  add('Elapsed time never goes backwards', mono);
+  var fuelDown = true, lf = Infinity; wps.forEach(function(x){ if(x.fuel != null){ if(x.fuel > lf + 1) fuelDown = false; lf = x.fuel; } });
+  add('Fuel never increases along the route', fuelDown);
+  add('Top of climb and top of descent found', wps.some(function(x){ return /T\/C/.test(x.ident); }) && wps.some(function(x){ return /T\/D/.test(x.ident); }));
+  add('Route string present', F.atc && F.atc.route && F.atc.route.length > 10);
+  var k = h.callsign + ' ' + h.dateLocal, kn = KNOWN[k];
+  if(kn){
+    var got = { type:h.type, dep:h.dep.icao, arr:h.arr.icao, wps:wps.length, dist:F.routing.dist, planTO:F.fuel && F.fuel.planTO && F.fuel.planTO.fuel, remf:F.fuel && F.fuel.remf && F.fuel.remf.fuel, tow:w.TOW && w.TOW.planned, etops:!!F.etopsAnalysis };
+    Object.keys(kn).forEach(function(f){ add('Known plan ' + k + ': ' + f, got[f] === kn[f], got[f] + (got[f] === kn[f] ? '' : ' (expected ' + kn[f] + ')')); });
+  }
+  return r;
+}
+async function run(file){
+  var box = document.createElement('div'); box.className = 'card'; box.innerHTML = '<h2>' + esc(file.name) + '</h2><div class="sub">Reading…</div>';
+  document.getElementById('out').appendChild(box);
+  try{
+    var doc = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise, pages = [], saw = false;
+    for(var i = 1; i <= doc.numPages; i++){
+      var tc = await (await doc.getPage(i)).getTextContent(); pages.push(tc.items);
+      var t = tc.items.map(function(x){ return x.str; }).join(' ');
+      if(/OPERATIONAL FLIGHTPLAN PG/.test(t)) saw = true;
+      if(saw && /END - OFP/.test(t)) break;
+    }
+    var F = NavLogParser.parsePages(pages);
+    if(!F.ok) throw new Error(F.error || 'Could not parse');
+    var res = checksFor(F), bad = res.filter(function(x){ return !x.ok; });
+    box.innerHTML = '<h2>' + esc(F.header.callsign) + ' ' + esc(F.header.dateLocal) + ' &middot; ' + esc(F.header.type) + ' &middot; ' + esc(F.header.dep.icao) + ' &rarr; ' + esc(F.header.arr.icao) + '</h2>' +
+      '<div class="sub">' + esc(file.name) + ' &middot; ' + doc.numPages + ' pages</div>' +
+      '<div class="sum ' + (bad.length ? 'bad' : 'ok') + '">' + (bad.length ? bad.length + ' of ' + res.length + ' checks FAILED' : 'All ' + res.length + ' checks passed') + '</div>' +
+      (bad.length ? bad.map(function(x){ return '<div class="ck bad"><b>FAIL</b><span>' + esc(x.n) + ' ' + esc(x.d) + '</span></div>'; }).join('') : '') +
+      '<details><summary>Show all checks</summary>' + res.map(function(x){ return '<div class="ck ' + (x.ok ? 'ok' : 'bad') + '"><b>' + (x.ok ? 'OK' : 'FAIL') + '</b><span>' + esc(x.n) + (x.d ? ' [' + esc(x.d) + ']' : '') + '</span></div>'; }).join('') + '</details>';
+  }catch(e){ box.innerHTML = '<h2>' + esc(file.name) + '</h2><div class="sum bad">Could not read this PDF: ' + esc(e && e.message || e) + '</div>'; }
+}
+document.getElementById('go').onclick = function(){ document.getElementById('f').click(); };
+document.getElementById('f').onchange = async function(e){
+  document.getElementById('out').innerHTML = '';
+  for(var i = 0; i < e.target.files.length; i++) await run(e.target.files[i]);
+  e.target.value = '';
+};
+</script></body></html>
