@@ -781,22 +781,57 @@ function askKeep(title, nPass) {
 
 /* ======================= stored PDF viewer ======================= */
 var vstyle = document.createElement('style');
-vstyle.textContent = '#pv{position:fixed;inset:0;z-index:9999;background:#05090e;display:flex;flex-direction:column}#pv[hidden]{display:none}#pv .pvh{flex:none;display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0d1928;border-bottom:2px solid #004b87;color:#e7eef6;font:700 14px -apple-system,Helvetica,Arial,sans-serif}#pv .pvh span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#pv .pvb{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:10px;text-align:center}#pv canvas{max-width:none;background:#fff;margin:0 auto 12px;display:block}#pv .pvm{color:#8fa3b8;padding:30px;font:14px -apple-system,Helvetica,Arial,sans-serif}';
+vstyle.textContent = '#pv{position:fixed;inset:0;z-index:9999;background:#05090e;display:flex;flex-direction:column}#pv[hidden]{display:none}#pv .pvh{flex:none;display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0d1928;border-bottom:2px solid #004b87;color:#e7eef6;font:700 14px -apple-system,Helvetica,Arial,sans-serif}#pv .pvh span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#pv .pvb{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:10px;text-align:center}#pv .pvb{touch-action:pan-x pan-y}#pv #pvw{transform-origin:0 0}#pv canvas{max-width:none;background:#fff;margin:0 auto 12px;display:block}#pv .pvm{color:#8fa3b8;padding:30px;font:14px -apple-system,Helvetica,Arial,sans-serif}';
 root.appendChild(vstyle);
 var pv = document.createElement('div'); pv.id = 'pv'; pv.hidden = true;
-pv.innerHTML = '<div class="pvh"><span id="pvt">PDF</span><button class="btn" id="pvz">Fit width</button><button class="btn primary" id="pvc">Close</button></div><div class="pvb" id="pvb"></div>';
+pv.innerHTML = '<div class="pvh"><span id="pvt">PDF</span><button class="btn" id="pvm" aria-label="Zoom out">\u2212</button><button class="btn" id="pvz">Fit width</button><button class="btn" id="pvp" aria-label="Zoom in">+</button><button class="btn primary" id="pvc">Close</button></div><div class="pvb" id="pvb"></div>';
 root.appendChild(pv);
 var pvDoc = null, pvZoom = 1, pvToken = 0;
+function setZoom(z, cx, cy) {
+  var body = $('#pvb'), nz = Math.max(1, Math.min(5, Math.round(z * 100) / 100));
+  if (nz === pvZoom) { var w0 = $('#pvw'); if (w0) w0.style.transform = ''; return; }
+  var r = nz / pvZoom, bx = body.clientWidth / 2, by = body.clientHeight / 2;
+  if (cx == null) { cx = bx; cy = by; }
+  var sl = (body.scrollLeft + cx) * r - cx, st = (body.scrollTop + cy) * r - cy;
+  pvZoom = nz; $('#pvz').textContent = nz === 1 ? 'Fit width' : Math.round(nz * 100) + '%';
+  pvRender().then(function () { body.scrollLeft = sl; body.scrollTop = st; });
+}
+(function () {
+  var d0 = 0, z0 = 1, sc = 1, mx = 0, my = 0, on = false;
+  function dist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx * dx + dy * dy); }
+  var body = pv.querySelector('#pvb');
+  body.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 2 && pvDoc) {
+      on = true; d0 = dist(e.touches); z0 = pvZoom; sc = 1;
+      var rc = body.getBoundingClientRect();
+      mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rc.left; my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rc.top;
+      var w = $('#pvw'); if (w) w.style.transformOrigin = (body.scrollLeft + mx) + 'px ' + (body.scrollTop + my) + 'px';
+    }
+  }, { passive: true });
+  body.addEventListener('touchmove', function (e) {
+    if (!on || e.touches.length !== 2) return;
+    e.preventDefault();
+    sc = Math.max(1 / z0, Math.min(5 / z0, dist(e.touches) / d0));
+    var w = $('#pvw'); if (w) w.style.transform = 'scale(' + sc + ')';
+  }, { passive: false });
+  function end(e) {
+    if (!on || e.touches.length >= 2) return;
+    on = false; var w = $('#pvw'); if (w) w.style.transform = '';
+    setZoom(z0 * sc, mx, my);
+  }
+  body.addEventListener('touchend', end, { passive: true });
+  body.addEventListener('touchcancel', end, { passive: true });
+})();
 var pvIO = null;
 async function pvRender() {
-  var tok = ++pvToken, body = $('#pvb'); body.innerHTML = '';
+  var tok = ++pvToken, body = $('#pvb'); body.innerHTML = '<div id="pvw"></div>'; var wrap = body.firstChild;
   if (pvIO) { pvIO.disconnect(); pvIO = null; }
   var w = Math.floor((body.clientWidth - 20) * pvZoom), dpr = Math.min(window.devicePixelRatio || 1, 2);
   var p1 = await pvDoc.getPage(1), v1 = p1.getViewport({ scale: 1 }), ph = Math.floor(w * v1.height / v1.width);
   var slots = [];
   for (var i = 1; i <= pvDoc.numPages; i++) {
     var d = document.createElement('div'); d.dataset.pg = i; d.style.cssText = 'width:' + w + 'px;height:' + ph + 'px;margin:0 auto 12px;background:#fff;position:relative';
-    body.appendChild(d); slots.push(d);
+    wrap.appendChild(d); slots.push(d);
   }
   var busyPg = {};
   async function draw(d) {
@@ -834,7 +869,9 @@ async function viewPdf() {
 pv.addEventListener('click', function (e) {
   var id = e.target && e.target.id;
   if (id === 'pvc') { pv.hidden = true; pvToken++; if (pvIO) { pvIO.disconnect(); pvIO = null; } pvDoc = null; $('#pvb').innerHTML = ''; }
-  else if (id === 'pvz') { if (!pvDoc) return; pvZoom = pvZoom >= 2 ? 1 : pvZoom + 0.5; e.target.textContent = pvZoom === 1 ? 'Fit width' : Math.round(pvZoom * 100) + '%'; pvRender(); }
+  else if (id === 'pvz') { if (!pvDoc) return; setZoom(1); }
+  else if (id === 'pvp') { if (!pvDoc) return; setZoom(pvZoom + 0.5); }
+  else if (id === 'pvm') { if (!pvDoc) return; setZoom(pvZoom - 0.5); }
 });
 function updView() {
   var b = $('#btnView'); if (!b) return;
